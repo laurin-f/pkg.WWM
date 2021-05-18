@@ -9,6 +9,8 @@ comsol_exe(
   input_pars = NULL,
   outfile_new = NULL,
   outfile_raw = "CO2_flux_prod.txt",
+  COMSOL_progammpath = COMSOL_progammpfad,
+  COMSOL_exepath = COMSOL_exepfad,
   job = "b1",
   overwrite = F
 )
@@ -18,7 +20,17 @@ comsol_exe(
 
 \item{input_pars}{named vector or dataframe where names represent Parameter names as defined in Comsol}
 
-\item{outfile_name}{name that the Comsol Export file should get}
+\item{outfile_new}{name that the COMSOL outputfile is changed to from this function}
+
+\item{outfile_raw}{name that COMSOL gives the outputfile}
+
+\item{COMSOL_progammpath}{path to COMSOL project file}
+
+\item{COMSOL_exepath}{path to comsolbatch.exe}
+
+\item{job}{name of the job that is defined in the COMSOL project file}
+
+\item{overwrite}{should existing modellresults be overwritten or not}
 }
 \value{
 

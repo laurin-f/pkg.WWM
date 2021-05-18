@@ -2,7 +2,7 @@
 % Please edit documentation in R/run_comsol.R
 \name{run_comsol}
 \alias{run_comsol}
-\title{Title}
+\title{Function to}
 \usage{
 run_comsol(
   data = data,
@@ -15,15 +15,38 @@ run_comsol(
   z_soil_cm = 150,
   modelname = "Diffusion_freeSoil_optim_3DS",
   file_suffix = NULL,
+  comsolpath = comsolpfad,
   input_pars = NULL
 )
 }
 \arguments{
-\item{modelname}{}
+\item{data}{dataframe mit Messwerten}
+
+\item{mod_dates}{Zeitpunkte zu denen modellierung statt finden soll}
+
+\item{overwrite}{sollen existierende Modelloutputs überschrieben werden}
+
+\item{read_all}{sollen alle Modellergebnisse der gewählten methode geladen werden}
+
+\item{n_DS}{Anzahl an DS Schichten}
+
+\item{plot}{sollen die Ergebnisse geplotten werden}
+
+\item{offset_method}{name der methode zur offset korrektur \code{"gam"} oder \code{"drift" ...}}
+
+\item{z_soil_cm}{Tiefe des Modells in cm}
+
+\item{modelname}{name des COMSOL Projekts}
+
+\item{file_suffix}{Dateiendung zB. um alternative Modellläufe zu kennzeichnen}
+
+\item{comsolpath}{}
+
+\item{input_pars}{Input Parameter}
 }
 \value{
 
 }
 \description{
-Title
+Function to
 }

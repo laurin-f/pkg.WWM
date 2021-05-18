@@ -41,8 +41,9 @@ split_chamber <- function(data,
   data <- data[!is.na(data[, gas]) & !is.na(data$date), ]
 
   #spalte mit minutenwerten
+  data <- data[order(data$date),]
   hourminute <- round_date(data$date, unit = round_intervall)
-
+  data$rowid <- 1:nrow(data) 
   #nach minutenwerten aggregieren
   data.agg <-
     aggregate(data, list(hourminute = as.character(hourminute)), mean)
@@ -137,7 +138,7 @@ split_chamber <- function(data,
 
       par(mfrow = c(2, 1), mar = c(1, 3, 1, 1))
       plot(
-        data.agg$date,
+        data.agg$rowid,
         data.agg[, gas],
         col = ifelse(data.agg$change == "", 1, NA),
         pch = 20,
@@ -145,7 +146,7 @@ split_chamber <- function(data,
       )
 
       points(
-        data.agg$date,
+        data.agg$rowid,
         data.agg[, gas],
         col = ifelse(
           data.agg$change == "",
@@ -251,18 +252,19 @@ split_chamber <- function(data,
     messid_cols <-
       scales::hue_pal()(max(data$messid, na.rm = T))[data$messid]
 
+    timediff <- which(difftime(data$date[-1],data$date[-nrow(data)],units="hours") > 1)
     #plot
     par(mfrow = c(2, 1), mar = c(1, 3, 1, 1))
     plot(
-      data.agg$date,
+      data.agg$rowid,
       data.agg[, gas],
       col = ifelse(data.agg$change == "", 1, NA),
       pch = 20,
       xlab = ""
     )
-    points(data$date, data[, gas], col = messid_cols)
+    points(data$rowid, data[, gas], col = messid_cols)
     points(
-      data.agg$date,
+      data.agg$rowid,
       data.agg[, gas],
       col = ifelse(
         data.agg$change == "",
@@ -271,7 +273,9 @@ split_chamber <- function(data,
       ),
       pch = as.character(data.agg$messid)
     )
-
+    abline(v=data$rowid[timediff])
+    title(main=paste(range(data$date,na.rm = T),collapse = " to "))
+    
     legend(
       "topleft",
       c("opening", "closing", unique(data$messid)),
@@ -289,6 +293,7 @@ split_chamber <- function(data,
     abline(v = closing, col = 3)
     abline(v = opening, col = 2)
     lines(after, pch = 3, col = 4)
+    
 
     legend(
       "bottomleft",
@@ -305,7 +310,7 @@ split_chamber <- function(data,
     }else{
     #ende if length opening/closing > 1
     par(mfrow = c(2, 1), mar = c(1, 3, 1, 1))
-    plot(data.agg$date, data.agg[, gas], pch = 20, xlab = "")
+    plot(data.agg[, gas], pch = 20, xlab = "")
 
     before_afters <-
       c(closing_lim,

@@ -154,7 +154,7 @@ chamber_flux <- function(messnr = NULL,
         #Fluss mit calc_flux berechnen
         flux_j <-
           calc_flux(
-            data = subset(data, date > beginn_seq[j] & date < ende_seq[j]),
+            data = subset(data, date > beginn[j] & date < ende[j]),
             group = "kammer",
             gas = i,
             Vol = Vol + Vol_schlauch[j],
