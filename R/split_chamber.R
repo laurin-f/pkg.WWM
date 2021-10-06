@@ -40,15 +40,22 @@ split_chamber <- function(data,
   #remove na rows of gas and date
   data <- data[!is.na(data[, gas]) & !is.na(data$date), ]
 
+  #data nach datum sortieren und hourminute aus date ausschneiden
+  data <- data[order(data$date), ]
+  data$hourminute <- paste0(format(data$date, "%Y-%m-%d %H:%M"), ":00")
+  #duplicate von hourminute entfernen
+  #sodass immer nur der erste Werte pro minute bleibt
+  data$hourminute[duplicated(data$hourminute)] <- NA
+  
   #spalte mit minutenwerten
-  data <- data[order(data$date),]
-  hourminute <- round_date(data$date, unit = round_intervall)
+  #hourminute <- round_date(data$date, unit = round_intervall)
   data$rowid <- 1:nrow(data) 
   #nach minutenwerten aggregieren
   data.agg <-
-    aggregate(data, list(hourminute = as.character(hourminute)), mean)
+    aggregate(data, list(hourminute = data$hourminute), mean)
   #date formatieren
   data.agg$date <- ymd_hms(data.agg$hourminute)
+  #data.agg <- data.agg[data.agg$hourminute %in% data$hourminute,]
 
   #########################################################
   #am aggregierten Datensatz kammermessungen identifizieren
@@ -64,8 +71,12 @@ split_chamber <- function(data,
 
   closing <- which(before / timediff_before < closing_lim &
                      after / timediff_after > closing_lim)
-  opening <- which(before / timediff_before > opening_lim &
-                     after / timediff_after < opening_lim)
+  # opening <- which(before / timediff_before > opening_lim &
+  #                    after / timediff_after < opening_lim)
+  #closing <- which(before  < closing_lim &
+  #                   after  > closing_lim)
+  opening <- which(before  > opening_lim &
+                    after < opening_lim)
 
 
 
@@ -86,27 +97,36 @@ split_chamber <- function(data,
       if (length(closing) > 1) {
         #alle weiteren Werte von closing werden iterativ getestet
         for (i in 2:length(closing)) {
-          #wenn opening[i-1] na ist wird an dieser stelle closing[i] -1 eingesetzt
-          if (is.na(opening[i - 1])) {
-            opening[i - 1] <- closing[i] - 1
+          if(i > length(closing)){
+            break
           }
-          #wenn opening[i-1] größer ist als closing[i] wird zwischen opening[i-2] und
-          #opening[i-1] closing[i]-1 eingefügt
-          if (opening[i - 1] > closing[i]) {
-            opening <-
-              c(opening[0:(i - 2)], closing[i] - 1, opening[(i - 1):length(opening)])
+          # #wenn opening[i-1] na ist wird an dieser stelle closing[i] -1 eingesetzt
+          # if (is.na(opening[i - 1])) {
+          #   opening[i - 1] <- closing[i] - 1
+          # }
+          #wenn opening[i-1] größer ist als closing[i] wird closing[i] entfernt solange bis das nicht mehr der fall ist
+          while (opening[i - 1] > closing[i]) {
+            closing <- closing[-i]
+            if(i > length(closing)){
+              break
+            }
+            #opening <-
+            #  c(opening[0:(i - 2)], closing[i] - 1, opening[(i - 1):length(opening)])
+          }
+          if(i > length(closing)){
+            break
           }
           #wenn opening[i] NA ist wird an diese stelle nrow(data.agg) geschrieben
-          if (is.na(opening[i])) {
-            opening[i] <- nrow(data.agg)
-          }
+          # if (is.na(opening[i])) {
+          #   opening[i] <- nrow(data.agg)
+          # }
           #solange opening[i] kleiner gleich closing[i] ist wird opening[i] entfernt
           #wenn kein opening[i] mehr da ist wird nrow(data.agg) eingefügt
           while (opening[i] <= closing[i]) {
             opening <- opening[-i]
-            if (is.na(opening[i])) {
-              opening[i] <- nrow(data.agg)
-            }#ende if
+            # if (is.na(opening[i])) {
+            #   opening[i] <- nrow(data.agg)
+            # }#ende if
           }#ende while
         }#ende for
         if (length(opening) > length(closing)) {
@@ -203,12 +223,7 @@ split_chamber <- function(data,
     closing.time <- data.agg$hourminute[closing]
     opening.time <- data.agg$hourminute[opening]
 
-    #data nach datum sortieren und hourminute aus date ausschneiden
-    data <- data[order(data$date), ]
-    data$hourminute <- paste0(format(data$date, "%Y-%m-%d %H:%M"), ":00")
-    #duplicate von hourminute entfernen
-    #sodass immer nur der erste Werte pro minute bleibt
-    data$hourminute[duplicated(data$hourminute)] <- NA
+
 
     #index von closing und opening des nicht aggregierten data.frames
     closingID <- which(data$hourminute %in% closing.time)

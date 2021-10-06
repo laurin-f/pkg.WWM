@@ -103,7 +103,7 @@ run_comsol <- function(data = data,
   for (j in seq_along(data_sub)) {
     sub_j <- data_sub[[j]]
     #injectionsrate zum Zeitpunkt j
-    injection_rate <- sub_j$inj_mol_m2_s[sub_j$tiefe == -24.5]
+    injection_rate <- sub_j$inj_mol_m2_s[sub_j$tiefe == -3.5]
     names(injection_rate) <- "injection_rate"
     
     #schreibe messwerte in files die in COMSOL als Objective verwendet werden
