@@ -59,10 +59,10 @@ update_Em50_data.db<-function(table.name="Em50",
       #dateityp wird ermittelt
       dateityp<-str_extract(x,"\\..*")
       #wenn es eine .xls datei ist
-      if(dateityp==".xls"){
+      if(grepl(".xlsx?",dateityp)){
 
         #wird die erste Reihe eingelesen
-        line1<-readxl::read_xls(paste0(path_EM50,x),n_max=1)
+        line1<-readxl::read_excel(paste0(path_EM50,x),n_max=1)
         #und die Anzahl Spalten ermittelt
         n_cols<-ncol(line1)
         #dann wird die ganze datei ohne die erste Reihe eingelesen,
@@ -70,7 +70,7 @@ update_Em50_data.db<-function(table.name="Em50",
         #die erste Spalte ist date der rest numeric
         #dies wird gemacht da bei fehlwerten in den ersten Spalten der Spaltentyp
         #von read_xls nicht richtig erkannt wird
-        data.x<-readxl::read_xls(paste0(path_EM50,x),skip=2,col_types = c("date", rep("numeric",n_cols-1)))
+        data.x<-readxl::read_excel(paste0(path_EM50,x),skip=2,col_types = c("date", rep("numeric",n_cols-1)))
       # wenn die Datei eine .txt ist
       }else if(dateityp==".txt"){
         #wird sie mit angepasstem NA strin eingelesen
@@ -167,12 +167,13 @@ read.Em50<-function(format="long", ...){
   #wenn longformat gewünscht ist...
   if(format=="long"){
     #ins long-format bringen
-    data_long<-tidyr::gather(data_wide,"key","value",-date)
-
-    #tiefe unit und plotID aus key ausschneiden
-    data_long$tiefe<-as.numeric(str_extract(data_long$key,"-?\\d+(?=_[A|B]$)"))
-    data_long$unit<-str_extract(data_long$key,"^[A-Z|a-z]+")
-    data_long$plot<-str_extract(data_long$key,"[A|B]$")
+    data_long<-tidyr::pivot_longer(data_wide,-date,names_pattern="(.+)_(.+)_(-?\\d+)_(A|B)",names_to = c(".value","key","tiefe","plot"))
+    # data_long<-tidyr::gather(data_wide,"key","value",-date)
+    # 
+    # #tiefe unit und plotID aus key ausschneiden
+    # data_long$tiefe<-as.numeric(str_extract(data_long$key,"-?\\d+(?=_[A|B]$)"))
+    # data_long$unit<-str_extract(data_long$key,"^[A-Z|a-z]+")
+    # data_long$plot<-str_extract(data_long$key,"[A|B]$")
 
     return(data_long)
   }else{

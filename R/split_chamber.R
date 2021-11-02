@@ -211,7 +211,7 @@ split_chamber <- function(data,
 
     #nur die closing opening perioden die mindestens
     #t_min minutenwerte enthalten wählen
-    diff_open_close <- (opening - closing) > t_min
+    diff_open_close <- (opening - closing) >= t_min
     opening <- opening[diff_open_close]
     closing <- closing[diff_open_close]
 

@@ -38,7 +38,7 @@ chamber_flux <- function(messnr = NULL,
   GGA <- unique(Messungen$GGA)
   #welcher Kammertyp wurde benutzt
   chamber <- unique(Messungen$kammer)
-
+  
 
   #im Kammer_Meta.xslsx habe ich das Kammervolumen abgeschätzt
   Kammer <-
@@ -67,9 +67,9 @@ chamber_flux <- function(messnr = NULL,
   ###########################
   #Daten laden
   #daten aus Database einlesen
-  data_ls <- vector("list",length(messnr))
+  data_ls <- vector("list",nrow(Messungen))
   
-  for(i in seq_along(messnr)){
+  for(i in 1:nrow(Messungen)){
   data_ls[[i]] <- read_GGA("GGA.db", GGA, datelim = c(beginn[i], ende[i]),ggapath=ggapath,sqlpath=sqlpath)
   }
   data.raw <- do.call(rbind,data_ls)
