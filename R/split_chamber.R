@@ -4,10 +4,10 @@
 #' @param data data.frame with gas concentrations of several chamber measurements
 #' @param closing_lim maximal concentration-gradient before closing the chamber
 #' @param opening_lim minimal concentration-gradient before opening the chamber
-#' @param t_max maximal measurement time, if time between closing and opening
+#' @param t_max maximal measurement time (minutes), if time between closing and opening
 #' exceeds this time the rest of the measurement will not be included for the calculation
 #' of the flux
-#' @param t_init initial time after closing of the chamber that will be excluded from the calculations
+#' @param t_init initial time (minutes) after closing of the chamber that will be excluded from the calculations
 #' @param t_min minimum timespan for each chamber measurement in minutes
 #' @param gas name of the gas as character
 #' @param adj_openings logical; if \code{TRUE} opening times will be adjusted

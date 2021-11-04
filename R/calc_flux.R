@@ -59,7 +59,7 @@ calc_flux <- function(data,
   group_messid_unique <- na.omit(unique(data[,group_messid]))
   #die group und messid wieder außeinanderschneiden
   gr_id <- str_split(group_messid_unique,"_",simplify = T)
-
+  
   #########################
   #Concentration slope
   ########################
@@ -67,14 +67,31 @@ calc_flux <- function(data,
   #Formel für glm
   formula <- paste0(gas,"_tara ~ zeit")
   #für jeden werte von group wird eine regression zwische gas und zeit durchgeführt
-  fm_list <- lapply(1:nrow(gr_id), function(x) glm(formula,data = data[which(data[,group] == gr_id[x,1] & data$messid == gr_id[x,2]),]))
+  fm_list <- lapply(1:nrow(gr_id), function(x) glm(formula,data = subset(data,messid == gr_id[x,2])))
   #aus der fm_liste wird jeweils der zweite coeffizient (steigung) ausgeschnitten
   ppm_per_min <- sapply(fm_list,"[[","coefficients")[2,]#ppm/min
-
+  
+  #der R2 der regression wird bestimmt
+  #Funktion um R2 aus fm zu bestimmen
+  R2_fm <- function(fm){
+    R2 <- 1-fm$deviance/fm$null.deviance
+    return(R2)
+  }
+  
+  #Funktion auf Liste anwenden
+  R2_str <- sapply(fm_list,R2_fm)
+  #Werte unter 95% identifizieren
+  bad_meas <- which(R2_str < 0.95)
+  #dazugehörige messid
+  bad_messid <- sapply(fm_list[bad_meas],function(x) unique(x$data$messid))
+  #Warnung
+  if(length(bad_meas)>0){
+    daterange <- sapply(fm_list[bad_meas],function(x) paste(format(range(x$data$date),"%H:%M:%S"),collapse = " to "))
+    print(paste(gas,"measurement",bad_messid,"from",daterange,"has an R2 of:",round(R2_str[bad_meas],2)))
+  }
 
   if(is.character(T_deg)){
-    messid_char <- "messid"
-    T_df <- data %>% group_by_at(c("messid",group_messid)) %>% filter(!is.na(messid)) %>% summarise_at(T_deg,list(~mean(.,na.rm=T))) %>% as.data.frame()
+    T_df <- data %>% group_by(messid) %>% filter(!is.na(messid)) %>% summarise_at(T_deg,list(~mean(.,na.rm=T))) %>% as.data.frame()
     T_deg <- T_df[,T_deg]
   }
   #######################################
@@ -100,7 +117,8 @@ calc_flux <- function(data,
   m<- m_mol_per_m3 / 10^6 #mol/cm3 = mol/ml
 
   #berechnung Flux in unterschiedlichen Einheiten
-  flux <- data.frame(ppm_per_min)
+  flux <- data.frame(ppm_per_min,R2=R2_str)
+  #flux <- data.frame(ppm_per_min)
 
   if(length(Vol) > 1){
     Vol <- as.numeric(as.character(factor(gr_id[,1],levels=names(Vol),labels=Vol)))
@@ -128,12 +146,12 @@ calc_flux <- function(data,
   ###################
   #Mittelwerte von date und Temperatur
   #mittelwerte des Datums der unterschiedlichen gruppen
-  date_means <- sapply(1:nrow(gr_id), function(x) mean(data[which(data[,group] == gr_id[x,1] & data$messid == gr_id[x,2]),"date"]))
+  date_means <- sapply(1:nrow(gr_id), function(x) mean(data[which(data$messid == gr_id[x,2]),"date"]))
   flux$date <- lubridate::as_datetime(date_means)
 
   #T_C ist bei mir die Temperatur in der Tracerinjektiobskiste
   if("T_C" %in% colnames(data)){
-    T_C_means <- sapply(1:nrow(gr_id), function(x) mean(data[which(data[,group] == gr_id[x,1] & data$messid == gr_id[x,2]),"T_C"]))
+    T_C_means <- sapply(1:nrow(gr_id), function(x) mean(data[which(data$messid == gr_id[x,2]),"T_C"]))
     flux$T_C <- T_C_means
   }
 
@@ -156,7 +174,7 @@ calc_flux <- function(data,
     flux[,group] <- gr_id[,1]
   }
   #der Name des Gases wird am Anfang jeder Spalte mit einer Einheit vorangestellt
-  colnames(flux) <- stringr::str_replace(colnames(flux),"^(?=(ppm|ml|g|mol|mumol))",paste0(gas,"_"))
+  colnames(flux) <- stringr::str_replace(colnames(flux),"^(?=(ppm|ml|g|mol|mumol|R2))",paste0(gas,"_"))
   #liste als output
   return(list(flux=flux,data=data))
 }
