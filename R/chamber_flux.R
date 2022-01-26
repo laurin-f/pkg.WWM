@@ -191,7 +191,7 @@ chamber_flux <- function(messnr = NULL,
   data_adj <- merge(flux[["CO2"]][[2]],flux[["CH4"]][[2]])
   flux_both <- merge(flux[["CO2"]][[1]],flux[["CH4"]][[1]])
   if(return_data == T){
-    return(list(flux_both,data_adj))
+    return(list(flux=flux_both,data=data_adj))
   }else{
     return(flux_both)
   }

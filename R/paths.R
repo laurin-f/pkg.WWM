@@ -9,6 +9,7 @@ datapfad_schaui<-paste0(hauptpfad,"Daten/Urdaten/Schauinsland/")
 klimapfad<- paste0(hauptpfad,"Daten/Urdaten/Klimadaten_Hartheim/")
 soilpfad<-paste0(hauptpfad,"Daten/Urdaten/Boden_Hartheim/")
 arduinopfad<-paste0(hauptpfad,"Daten/Urdaten/Arduino/")
+PP_datapfad<-paste0(hauptpfad,"Daten/Urdaten/PP_Arduino/")
 
 #aufbereitete Daten
 sqlpfad<-paste0(hauptpfad,"Daten/aufbereiteteDaten/SQLite/")
