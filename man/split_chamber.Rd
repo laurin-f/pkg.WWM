@@ -23,11 +23,11 @@ split_chamber(
 
 \item{opening_lim}{minimal concentration-gradient before opening the chamber}
 
-\item{t_max}{maximal measurement time, if time between closing and opening
+\item{t_max}{maximal measurement time (minutes), if time between closing and opening
 exceeds this time the rest of the measurement will not be included for the calculation
 of the flux}
 
-\item{t_init}{initial time after closing of the chamber that will be excluded from the calculations}
+\item{t_init}{initial time (minutes) after closing of the chamber that will be excluded from the calculations}
 
 \item{t_min}{minimum timespan for each chamber measurement in minutes}
 
