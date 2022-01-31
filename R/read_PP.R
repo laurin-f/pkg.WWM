@@ -44,9 +44,13 @@ read_PP <- function(datelim=NULL, #Zeitrahmen der geladen werden soll
   data$date<-date_ms_as_int(data$date_int)
   #date_int weglassen
   data<-data[,colnames(data)!="date_int"]
-  data[,2:7] <- V_to_Pa(...)
-  if(format=="long"){
-    
+  
+  data[,paste0("P_",1:6)] <- V_to_Pa(data[,paste0("P_",1:6)])
+  if(format == "long"){
+    data <- tidyr::pivot_longer(data,-date,
+                                names_to = "id",
+                                names_prefix = "P_",
+                                values_to = "p_Pa")
   }
   return(data)
 }

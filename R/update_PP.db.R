@@ -45,8 +45,8 @@ update_PP.db<-function(table.name="PP_chamber"){
     data <- do.call(rbind,data.list)
     
     colnames(data) <- c(paste0("P_",1:6),"date_char")  
-    data$date <- strptime(data$date_char,"%Y-%m-%d %H:%M:%OS")
-    data$date_int <- date_ms_as_int(data$date)
+    #data$date <- strptime(data$date_char,"%Y-%m-%d %H:%M:%OS")
+    data$date_int <- date_ms_as_int(data$date_char)
     
     date_duplicate <- duplicated(data$date_int)
     #are there date duplicates
