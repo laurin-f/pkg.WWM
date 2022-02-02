@@ -4,7 +4,7 @@
 \alias{read_PP}
 \title{Function to read Pressure data from db}
 \usage{
-read_PP(datelim = NULL, cols = "*")
+read_PP(datelim = NULL, cols = "*", table.name = "PP_chamber", format = "long")
 }
 \arguments{
 \item{datelim}{}
