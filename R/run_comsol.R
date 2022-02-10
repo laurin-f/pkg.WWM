@@ -30,6 +30,7 @@ run_comsol <- function(data = data,
                        modelname = "Diffusion_freeSoil_optim_3DS",
                        file_suffix = NULL,
                        comsolpath = comsolpfad,
+                       long = T,
                        input_pars = NULL) {
   ############################################
   #Daten umformatieren
@@ -336,6 +337,9 @@ run_comsol <- function(data = data,
     F_Comsol$Fz[F_Comsol$date == mod_dates_all[[j]]] <-
       Fz_mumol_per_s_m2
     
+  }
+  if(long == T){
+    F_Comsol <- tidyr::pivot_longer(F_Comsol,matches("DS"),names_pattern = "(.+)(\\d)",names_to = c(".value","tiefe"))
   }
   return(F_Comsol)
 }

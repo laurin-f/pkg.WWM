@@ -21,9 +21,13 @@ comsol_exe_nruns <- function(modelname,
                              COMSOL_exepath = COMSOL_exepfad,
                              job = "b1",
                              overwrite = F,
+                             inj_fun = "mean",
                              nruns=10) {
   
   outfile_full <- paste0(comsolpfad,outfile_raw)
+  probe_table <- paste0(comsolpfad,"Probe_table.txt")
+  probe <- F
+  break_for <- F
   par_file <- paste0(comsolpfad,"input_pars.txt")
   cmd <- paste0("cd ",COMSOL_exepath,"&& comsolbatch.exe -inputfile ",COMSOL_progammpath,modelname,".mph -outputfile ",COMSOL_progammpath,modelname,"_solved.mph -job ",job," -paramfile ",par_file)
   
@@ -35,7 +39,7 @@ comsol_exe_nruns <- function(modelname,
     files <- list.files(comsolpfad)
     existing_files <- outfile_names %in% files
     if(any(existing_files)){
-      cat(paste(paste(outfile_names[existing_files],collapse = "\n"),"\nalready exist set overwrite = T to replace them"))
+      cat(paste(paste(outfile_names[existing_files],collapse = "\n"),"\nalready exist set overwrite = T to replace them\n"))
     }
     data_list <- data_list[!existing_files]
     outfile_names <- outfile_names[!existing_files]
@@ -44,70 +48,103 @@ comsol_exe_nruns <- function(modelname,
     print("no new dates to be calculated")
   }else{
     print(paste("calculating",length(data_list),"dates"))
+    pb <-  txtProgressBar(min = 0, max = length(outfile_names), initial = 0,style=3)
     for (j in seq(1,length(data_list),by=nruns)) {
       
-      print(paste("j=",j))
+      
       sub_j <- data_list[j:(j+nruns-1)]
       #injectionsrate zum Zeitpunkt j
       injection_range <- range(sapply(sub_j,function(x) x$inj_mol_m2_s[1],simplify = T))
       #for(l in 1:2){
       
       #injection_rate <- injection_range[l]
-      injection_rate <- mean(injection_range)
+      fn <- get(inj_fun,mode="function")
+      injection_rate <- fn(injection_range)
       names(injection_rate) <- "injection_rate"
       write.table(t(injection_rate),file=par_file,row.names = F,quote = F,sep = " ")
       
       
-        #schreibe messwerte in files die in COMSOL als Objective verwendet werden
-        for (i in 1:7) {
-          write.table(
-            sub_j[[1]][sub_j[[1]]$tiefe == (1:7 * -3.5)[i], "CO2_mol_per_m3"],
-            paste0(metapfad_comsol, "dom", i, ".csv"),
-            col.names = F,
-            row.names = F,
-            sep = ","
-          )
-        }
+      
+      #schreibe messwerte in files die in COMSOL als Objective verwendet werden
+      for (i in 1:7) {
+        write.table(
+          sub_j[[1]][sub_j[[1]]$tiefe == (1:7 * -3.5)[i], "CO2_mol_per_m3"],
+          paste0(metapfad_comsol, "dom", i, ".csv"),
+          col.names = F,
+          row.names = F,
+          sep = ","
+        )
+      }
       
       for(k in 1:nruns){
-        print(paste("k=",k))
-        
+        if(break_for){
+          break
+        }
         jk <- j+k-1
-        
+        setTxtProgressBar(pb,jk)
         
         
         #string that is parsed to commandline
         if(k == 1){
-          print("cmd")
           shell(cmd,translate=T,wait=F)
         }
         
         #outfile_names_l <- stringr::str_replace(outfile_names,".txt",paste0("inj",l,".txt"))
         #new name for outputfile with path
-        outfile_jk <- paste0(comsolpfad,outfile_names[jk])
-        
-        while(!file.exists(outfile_jk)){
-          if(file.exists(outfile_full)){
-            for (i in 1:7) {
-              write.table(
-                sub_j[[k+1]][sub_j[[k+1]]$tiefe == (1:7 * -3.5)[i], "CO2_mol_per_m3"],
-                paste0(metapfad_comsol, "dom", i, ".csv"),
-                col.names = F,
-                row.names = F,
-                sep = ","
-              )
-            }
+        if(jk <= length(outfile_names)){
+          #cat(paste("date ",jk,": ",outfile_names[jk]))
+          outfile_jk <- paste0(comsolpfad,outfile_names[jk])
+          
+          #while(!file.exists(outfile_jk) ){
+          counter <- 1
+          while(!file.exists(outfile_full)){
+            Sys.sleep(1.1)
+            counter <- counter + 1
             
-            file.rename(outfile_full,outfile_jk)
+            if(counter > 20){
+              if(!comsolbatch_CPU()){
+                break_for <- T
+                break
+              }
+            }
+            if(file.exists(probe_table)){
+              if(probe == F){
+                if(k < nruns){
+                  for (i in 1:7) {
+                    write.table(
+                      sub_j[[k+1]][sub_j[[k+1]]$tiefe == (1:7 * -3.5)[i], "CO2_mol_per_m3"],
+                      paste0(metapfad_comsol, "dom", i, ".csv"),
+                      col.names = F,
+                      row.names = F,
+                      sep = ","
+                    )
+                  }
+                  probe <- T
+                }
+              }
+              
+            }
           }
-          Sys.sleep(0.1)
-          print("while loop")
+          if(file.exists(outfile_full)){
+
+            Sys.sleep(0.15)
+            file.rename(outfile_full,outfile_jk)
+            
+            outlines <- readLines(outfile_jk)
+            outlines[1] <- paste("injection_rate",injection_rate)
+            writeLines(outlines,outfile_jk)
+            
+            if(file.exists(probe_table)){
+              file.remove(probe_table)
+              probe <- F
+            }
+          }
+          
         }
+        
       }
-      
-      #commandline befehl ausführen
-      
     }
+    close(pb)
   }
 }
 
@@ -116,7 +153,7 @@ comsol_exe_nruns <- function(modelname,
 
 
 ####################################
-check_CPU2<-function(){
+comsolbatch_CPU<-function(){
   #Liste erzeugen in der der Name und die CPU aller laufender Prozesse steht
   tasklist<-system(
     "wmic path Win32_PerfFormattedData_PerfProc_Process get Name,PercentProcessorTime",
@@ -126,22 +163,8 @@ check_CPU2<-function(){
   #die auseinandergeschnittenen Strings zu einer Matrix zusammenfügen
   tasks<-do.call("rbind",tasksplit)
   
-  #abfragen ob in der Taskliste H1D_UNSC vorkommt
-  if(length(grep("H1D_UNSC",tasks))>0){
-    #while Schleife wiederholen solange die CPU von H1D größer als 0 ist
-    while(length(which(tasks[grep("H1D_UNSC",tasks),2]>0))>0){
-      #kurz warten
-      Sys.sleep(1)
-      #aktuelle Taskliste abfragen und wie gehabt formatieren
-      tasklist<-system(
-        "wmic path Win32_PerfFormattedData_PerfProc_Process get Name,PercentProcessorTime",
-        intern=T)
-      tasksplit<-strsplit(tasklist[2:(length(tasklist)-1)]," \\s+")
-      tasks<-do.call("rbind",tasksplit)
-    }#ende while Schleife
-  }#ende if length H1D >0
+  T_F <- any(grepl("comsolbatch",tasks))
+  return(T_F)
 }#ende check_CPU Funktion
 
-#CPU checken
-check_CPU2()
 
