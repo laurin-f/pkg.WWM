@@ -11,12 +11,13 @@ run_comsol_nruns(
   read_all = T,
   n_DS = 3,
   plot = F,
-  offset_method = "gam",
+  offset_method = "drift",
   z_soil_cm = 150,
-  modelname = "Diffusion_freeSoil_optim_3DS",
+  modelname = "Diffusion_freeSoil_anisotropy_optim_3DS_50runs",
   file_suffix = NULL,
   comsolpath = comsolpfad,
-  nruns = nruns
+  long = T,
+  ...
 )
 }
 \arguments{

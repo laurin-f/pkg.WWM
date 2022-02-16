@@ -44,11 +44,20 @@ comsol_exe_nruns <- function(modelname,
     data_list <- data_list[!existing_files]
     outfile_names <- outfile_names[!existing_files]
   }
+  
   if(length(data_list) == 0){
     print("no new dates to be calculated")
   }else{
     print(paste("calculating",length(data_list),"dates"))
-    pb <-  txtProgressBar(min = 0, max = length(outfile_names), initial = 0,style=3)
+    if(length(data_list) > 1){
+      pb <-  txtProgressBar(min = 1, max = length(outfile_names), initial = 1,style=3)
+    }else{
+      pb <-  txtProgressBar(min = 0, max = length(outfile_names), initial = 0,style=3)
+    }
+    if(comsolbatch_CPU()){
+      cat("\n")
+      system("taskkill /IM comsolbatch.exe /F",show.output.on.console=T)
+    }
     for (j in seq(1,length(data_list),by=nruns)) {
       
       
@@ -126,13 +135,13 @@ comsol_exe_nruns <- function(modelname,
             }
           }
           if(file.exists(outfile_full)){
-
+            
             Sys.sleep(0.15)
             file.rename(outfile_full,outfile_jk)
             
-            outlines <- readLines(outfile_jk)
-            outlines[1] <- paste("injection_rate",injection_rate)
-            writeLines(outlines,outfile_jk)
+            # outlines <- readLines(outfile_jk)
+            # outlines[1] <- paste("injection_rate",injection_rate)
+            # writeLines(outlines,outfile_jk)
             
             if(file.exists(probe_table)){
               file.remove(probe_table)
@@ -140,10 +149,16 @@ comsol_exe_nruns <- function(modelname,
             }
           }
           
-        }
+        }else{
+          if(comsolbatch_CPU()){
+            cat("\n")
+            system("taskkill /IM comsolbatch.exe /F",show.output.on.console=T)
+          }
+          
+        }#if jk
         
-      }
-    }
+      }# for k
+    }# for j
     close(pb)
   }
 }

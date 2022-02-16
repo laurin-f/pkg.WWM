@@ -171,6 +171,8 @@ run_comsol_nruns <- function(data = data,
   
   F_Comsol <- data.frame(date = mod_dates_all)
   
+  # print(length(outfiles))
+  # print(all(file.exists(outfiles)))
   ####################################
   #read loop
   #######################################
@@ -185,8 +187,9 @@ run_comsol_nruns <- function(data = data,
     CO2_mod <- CO2_optim[, 1:3]
     best_DS <- CO2_optim[1, 4:(n_DS + 3)]
     
-    line <- readLines(outfiles[j],n = 1)
-    injection_rate <- stringr::str_split(line," ")[[1]][2]
+    #line <- readLines(outfiles[j],n = 1)
+    #injection_rate <- stringr::str_split(line," ")[[1]][2]
+    injection_rate <- CO2_optim[1,7]
     
     obs_j <- data_list[[as.character(mod_dates_all)[j]]]
     
@@ -235,6 +238,7 @@ run_comsol_nruns <- function(data = data,
   }
   if(long == T){
     F_Comsol <- tidyr::pivot_longer(F_Comsol,matches("DS"),names_pattern = "(.+)(\\d)",names_to = c(".value","tiefe"))
+    F_Comsol <- as.data.frame(F_Comsol)
   }
   return(F_Comsol)
 }

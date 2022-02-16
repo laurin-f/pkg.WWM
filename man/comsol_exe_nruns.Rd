@@ -13,6 +13,7 @@ comsol_exe_nruns(
   COMSOL_exepath = COMSOL_exepfad,
   job = "b1",
   overwrite = F,
+  inj_fun = "mean",
   nruns = 10
 )
 }

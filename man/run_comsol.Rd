@@ -16,6 +16,7 @@ run_comsol(
   modelname = "Diffusion_freeSoil_optim_3DS",
   file_suffix = NULL,
   comsolpath = comsolpfad,
+  long = T,
   input_pars = NULL
 )
 }
