@@ -1,6 +1,10 @@
 #pfade definieren
 
-hauptpfad <- "C:/Users/ThinkPad/Documents/FVA/P01677_WindWaldMethan/"
+#hauptpfad <- "C:/Users/ThinkPad/Documents/FVA/P01677_WindWaldMethan/"
+
+
+hauptpfad <- paste0(getwd(),"/../../")
+
 
 #Urdaten
 ggapfad<-paste0(hauptpfad,"Daten/Urdaten/GGA/")
