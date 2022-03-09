@@ -53,7 +53,7 @@ update_PP.db<-function(table.name="PP_chamber"){
     #if yes then the cases with duplicates are joined
     #replacing NA values of the duplicated rows with the values in the corresponding cases
     if(any(date_duplicate)){
-      dyn <- rquery::natural_join(dyn[date_duplicate,],dyn[!date_duplicate,],by="date_int", jointype = "FULL")
+      data <- rquery::natural_join(data[date_duplicate,],data[!date_duplicate,],by="date_int", jointype = "FULL")
     }
     
     data <- data[,c("date_int",paste0("P_",1:6))]

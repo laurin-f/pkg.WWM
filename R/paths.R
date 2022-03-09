@@ -12,7 +12,7 @@ dynpfad<-paste0(hauptpfad,"Daten/Urdaten/Dynament/")
 datapfad_schaui<-paste0(hauptpfad,"Daten/Urdaten/Schauinsland/")
 klimapfad<- paste0(hauptpfad,"Daten/Urdaten/Klimadaten_Hartheim/")
 soilpfad<-paste0(hauptpfad,"Daten/Urdaten/Boden_Hartheim/")
-arduinopfad<-paste0(hauptpfad,"Daten/Urdaten/Arduino/")
+arduinopfad<-paste0(hauptpfad,"Daten/Urdaten/Profileprobe3_Arduino/")
 PP_datapfad<-paste0(hauptpfad,"Daten/Urdaten/PP_Arduino/")
 
 #aufbereitete Daten
