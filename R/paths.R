@@ -14,6 +14,7 @@ klimapfad<- paste0(hauptpfad,"Daten/Urdaten/Klimadaten_Hartheim/")
 soilpfad<-paste0(hauptpfad,"Daten/Urdaten/Boden_Hartheim/")
 arduinopfad<-paste0(hauptpfad,"Daten/Urdaten/Profileprobe3_Arduino/")
 PP_datapfad<-paste0(hauptpfad,"Daten/Urdaten/PP_Arduino/")
+chamber_arduino_pfad <- paste0(hauptpfad,"/Daten/Urdaten/Kammermessungen_Arduino")
 
 #aufbereitete Daten
 sqlpfad<-paste0(hauptpfad,"Daten/aufbereiteteDaten/SQLite/")
