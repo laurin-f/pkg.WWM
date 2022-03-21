@@ -12,6 +12,11 @@
 #' @examples
 chamber_arduino <- function(datelim,
                             data = NULL,
+                            gga_data = F,
+                            gas =  "CO2",
+                            t_min = 5,
+                            t_init = 1,
+                            t_max = 10,
                             return_ls = F) {
   Kammer <-
     readxl::read_xlsx(paste0(metapfad, "Kammermessungen/Kammer_Volumen.xlsx"),
@@ -51,11 +56,29 @@ chamber_arduino <- function(datelim,
   
   data_sub <- subset(data,date > datelim[1] & date < datelim[2])
 
+  #########
+  #read GGA
+  if(gga_data == T){
+    data_gga <- read_GGA(datelim =datelim,table.name = "gga")
+    data_gga$date <- round_date(data_gga$date,"5 secs")
+    names(data_gga) <- c("date",paste0(names(data_gga[-1]),"_GGA"))
+    
+    data_agg <- data_sub %>% 
+      mutate(date = ceiling_date(date, "5 secs")) %>% 
+      group_by(date) %>% 
+      summarise(CO2 = mean(CO2,na.rm=T),
+                T_C = mean(T_C,na.rm=T),
+                chamber=median(chamber))
+
+    data_sub <- merge(data_agg,data_gga,all=T)
+    data_sub$chamber <- imputeTS::na_interpolation(data_sub$chamber)
+  }
+  
   ################
   #kammermessungen trennen
   
   closingID <- which(diff(data_sub$chamber) == 1)+1
-  openingID <- which(diff(data_sub$chamber) == -1)+1
+  openingID <- which(diff(data_sub$chamber) == -1)
   
   if(closingID[1] > openingID[1]){
     closingID <- c(1,closingID)
@@ -65,18 +88,29 @@ chamber_arduino <- function(datelim,
     openingID <- c(openingID,nrow(data_sub))
   }
   
+  closing_date <- data_sub$date[closingID]
+  opening_date <- data_sub$date[openingID]
+  
+  meas_time <- as.numeric(difftime(opening_date,closing_date,"mins"))
+  
+  closingID <- closingID[meas_time > t_min]
+  openingID <- openingID[meas_time > t_min]
+  
   data_sub$zeit <- NA
   data_sub$messid <- NA
   for (i in 1:length(openingID)) {
     #zeit in minuten nach closing
     data_sub$zeit[closingID[i]:openingID[i]] <-
-      difftime(data_sub$date[closingID[i]:openingID[i]], data_sub$date[closingID[i]], unit =
+      difftime(data_sub$date[closingID[i]:openingID[i]], data_sub$date[closingID[i]]+t_init*60, unit =
                  "mins")
     #messid als durchlaufende Nummer f�r jede closing opening periode
     data_sub$messid[closingID[i]:openingID[i]] <- i
   }
+  data_sub$zeit[data_sub$zeit > t_max | data_sub$zeit < 0] <- NA
+  data_sub$messid[is.na(data_sub$zeit)] <- NA
   
-  flux <- calc_flux(na.omit(data_sub),group="messid",Vol=Vol,Grundfl = Grundfl,T_deg = "T_C")
+  flux <- calc_flux(data_sub[!is.na(data_sub[,gas]),],group="messid",Vol=Vol,Grundfl = Grundfl, gas = gas, T_deg = "T_C")
+  
   if(return_ls){
     return(flux)
   }else{
@@ -84,6 +118,4 @@ chamber_arduino <- function(datelim,
   }
   
 }
-
-
 

@@ -129,7 +129,7 @@ calc_flux <- function(data,
   ########################################
 
   flux$ml_per_min<-ppm_per_min /10^6 * Vol #cm3 / min
-  flux$g_per_min <- flux$ml_per_min * ro[,gas] #g / min
+  flux$g_per_min <- flux$ml_per_min * ro[,substr(gas,0,3)] #g / min
   flux$mol_per_min <- flux$ml_per_min * m #mol / min
   flux$mumol_per_s <- change_unit(flux$mol_per_min,"mol/min","micromol/s") #mol / min
   if(!is.null(Grundfl)){
@@ -155,6 +155,10 @@ calc_flux <- function(data,
     flux$T_C <- T_C_means
   }
 
+  if(group == "messid"){
+    #wenn messid nicht die Gruppe ist dan wird es jetzt entfernt
+    data <- data[,!grepl(group_messid,colnames(data))]
+  }
   ##################
   #aggregate
   ##################
@@ -170,6 +174,7 @@ calc_flux <- function(data,
     #der Spaltenname "group" wird in group umgewandelt
     colnames(flux) <- str_replace(colnames(flux),"group",group)
   }else{
+    
     #wenn nicht agggegiert wird dann wird hier die Spalte mit group angehängt
     flux[,group] <- gr_id[,1]
   }
