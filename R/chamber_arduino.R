@@ -8,6 +8,7 @@
 #' @export
 #' @import lubridate
 #' @import readxl
+#' @import ggplot2
 #' @import imputeTS
 #' @examples
 chamber_arduino <- function(datelim,
@@ -17,6 +18,8 @@ chamber_arduino <- function(datelim,
                             t_min = 5,
                             t_init = 1,
                             t_max = 10,
+                            t_offset = 0,
+                            plot = "facets",
                             return_ls = F) {
   Kammer <-
     readxl::read_xlsx(paste0(metapfad, "Kammermessungen/Kammer_Volumen.xlsx"),
@@ -27,9 +30,18 @@ chamber_arduino <- function(datelim,
   ##########################################
   #daten laden
   if(is.null(data)){
-  files <- list.files(chamber_arduino_pfad,pattern = "_chamber",full.names = T)
+  files <- list.files(chamber_arduino_pfad,pattern = "_chamber",full.names = F)
   
-  data_ls <- lapply(files,read.table,sep=";",header=T,stringsAsFactors = F,fill=T)
+  if(is.character(datelim)){
+    datelim <- ymd_hm(datelim)
+  }
+  ##subset of files with date in datelim
+  file_date <- lubridate::ymd(stringr::str_extract(files,"^\\d{6}"))
+  dates <- lubridate::date(datelim)
+  files <- files[file_date >= dates[1] & file_date <= dates[2]]
+  
+  #read files
+  data_ls <- lapply(paste0(chamber_arduino_pfad,files),read.table,sep=";",header=T,stringsAsFactors = F,fill=T)
   data <- do.call(rbind,data_ls)
   data$date <- ymd_hms(data$date)
   colnames(data) <- c("date","CO2","T_C","chamber")
@@ -40,7 +52,7 @@ chamber_arduino <- function(datelim,
   #aufbereiten
   data$CO2 <- as.numeric(data$CO2)
   data$CO2[ data$CO2 < 300| data$CO2 > 9000] <- NA
-  data <- data[-which(diff(data$CO2) < -200),]
+  data <- data[!(diff(data$CO2) < -200),]
   data$CO2 <- imputeTS::na_interpolation(data$CO2,maxgap = 10)
   
   data$T_C <- as.numeric(data$T_C)
@@ -50,9 +62,7 @@ chamber_arduino <- function(datelim,
   
   ###########
   #data_sub
-  if(is.character(datelim)){
-    datelim <- ymd_hm(datelim)
-  }
+
   
   data_sub <- subset(data,date > datelim[1] & date < datelim[2])
 
@@ -60,7 +70,7 @@ chamber_arduino <- function(datelim,
   #read GGA
   if(gga_data == T){
     data_gga <- read_GGA(datelim =datelim,table.name = "gga")
-    data_gga$date <- round_date(data_gga$date,"5 secs")
+    data_gga$date <- round_date(data_gga$date,"5 secs") - t_offset
     names(data_gga) <- c("date",paste0(names(data_gga[-1]),"_GGA"))
     
     data_agg <- data_sub %>% 
@@ -68,10 +78,10 @@ chamber_arduino <- function(datelim,
       group_by(date) %>% 
       summarise(CO2 = mean(CO2,na.rm=T),
                 T_C = mean(T_C,na.rm=T),
-                chamber=median(chamber))
+                chamber=max(chamber))
 
     data_sub <- merge(data_agg,data_gga,all=T)
-    data_sub$chamber <- imputeTS::na_interpolation(data_sub$chamber)
+    data_sub$chamber <- imputeTS::na_interpolation(data_sub$chamber,method="constant")
   }
   
   ################
@@ -110,6 +120,27 @@ chamber_arduino <- function(datelim,
   data_sub$messid[is.na(data_sub$zeit)] <- NA
   
   flux <- calc_flux(data_sub[!is.na(data_sub[,gas]),],group="messid",Vol=Vol,Grundfl = Grundfl, gas = gas, T_deg = "T_C")
+  
+  if(plot == "facets"){
+
+    p <- ggplot(subset(flux[[2]],!is.na(messid)))+
+      geom_smooth(aes(zeit,get(paste0(gas,"_tara"))),method="lm",se=F,col=1,linetype=2,lwd=0.7)+
+      geom_line(aes(zeit,get(paste0(gas,"_tara")),col=as.factor(messid)))+
+      facet_wrap(~messid)+
+      guides(col=F)
+    print(p)
+  }
+  if(plot == "timeline"){
+    p <- ggplot(flux[[2]])+
+      geom_line(aes(date,get(gas),col=as.factor(messid),group=1))
+    print(p)
+  }
+  if(plot == "flux"){
+    p <- ggplot(flux[[1]])+
+      geom_line(aes(date,get(paste0(gas,"_mumol_per_s_m2"))))
+    print(p)
+  }
+  
   
   if(return_ls){
     return(flux)
