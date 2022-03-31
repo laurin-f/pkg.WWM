@@ -4,7 +4,19 @@
 \alias{chamber_arduino}
 \title{FUnction to calculate CO2 flux from arduino measurements}
 \usage{
-chamber_arduino(datelim, data = NULL, return_ls = F)
+chamber_arduino(
+  datelim,
+  data = NULL,
+  gga_data = T,
+  gas = c("CO2", "CO2_GGA", "CH4"),
+  t_min = 5,
+  t_init = 1,
+  t_max = 10,
+  t_offset = 0,
+  gga = "gga",
+  plot = "facets",
+  return_ls = T
+)
 }
 \arguments{
 \item{datelim}{ymd_hm}
