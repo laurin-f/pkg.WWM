@@ -7,6 +7,8 @@
 #' @import stringr
 #' @import lubridate
 #' @import RSQLite
+#' @import gsignal
+#' @import RcppRoll
 #'
 #' @examples
 update_PP.db<-function(table.name="PP_chamber"){
@@ -58,14 +60,36 @@ update_PP.db<-function(table.name="PP_chamber"){
     
     data <- data[,c("date_int",paste0("P_",1:6))]
     
+    
     if(is.null(data)){
       print(paste("no new files for",table.name))
     }else{
+      
+      #V to Pa
+      data[,paste0("P_",1:6)] <- V_to_Pa(data[,paste0("P_",1:6)])
+      
+      date <- date_ms_as_int(data$date_int)
+      t_diff <- as.numeric(median(difftime(date[-1],date[-nrow(data)],"secs")))
+      
+      #####################
+      #P_filter und PPC
+      fs <- 1 / round(t_diff,1)#1/s = Hz
+      fpass <- c(0.003,0.1)
+      wpass <- fpass / (fs /2)
+      
+      
+      bpfilter <- gsignal::butter(n=3,w=wpass,type="pass")
+      for(i in 1:6){
+        data[,paste0("P_filter_",i)] <- gsignal::filtfilt(bpfilter,data[,paste0("P_",i)])
+        abs_diff_i <- abs(c(NA,diff(data[,paste0("P_filter_",i)])))
+        data[,paste0("PPC_",i)] <- fs*RcppRoll::roll_mean(abs_diff_i,30*60*fs,fill=NA)
+      }
+      
       #db verbinden
       con<-RSQLite::dbConnect(RSQLite::SQLite(),paste0(sqlpfad,"PP.db"))
       #falls tabelle in db nicht vorhanden wird sie hier erstellt
       createquery<-paste0("CREATE TABLE IF NOT EXISTS ",table.name," (date_int INTEGER PRIMARY KEY",
-                          paste(",",paste0("P_",1:6),"INTEGER",collapse = ""),")")
+                          paste(",",paste0(rep(c("P_","P_filter_","PPC_"),each=6),rep(1:6,3)),"REAL",collapse = ""),")")
       DBI::dbExecute(con, createquery)
       
       print(paste("appending",length(files.new),"files to Database"))

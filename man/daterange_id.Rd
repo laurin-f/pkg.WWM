@@ -2,7 +2,7 @@
 % Please edit documentation in R/subset_daterange.R
 \name{daterange_id}
 \alias{daterange_id}
-\title{Title}
+\title{Function that returns a vector with the IDs of the rows in data that lie in daterange}
 \usage{
 daterange_id(data, daterange, datecol = "date")
 }
@@ -17,5 +17,5 @@ daterange_id(data, daterange, datecol = "date")
 
 }
 \description{
-Title
+Function that returns a vector with the IDs of the rows in data that lie in daterange
 }

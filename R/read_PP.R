@@ -45,12 +45,14 @@ read_PP <- function(datelim=NULL, #Zeitrahmen der geladen werden soll
   #date_int weglassen
   data<-data[,colnames(data)!="date_int"]
   
-  data[,paste0("P_",1:6)] <- V_to_Pa(data[,paste0("P_",1:6)])
+  #data[,paste0("P_",1:6)] <- V_to_Pa(data[,paste0("P_",1:6)])
+  
+  
   if(format == "long"){
-    data <- tidyr::pivot_longer(data,-date,
-                                names_to = "id",
-                                names_prefix = "P_",
-                                values_to = "p_Pa")
+    data <- tidyr::pivot_longer(data,
+                                     matches("PPC|P|P_filter"),
+                                     names_pattern = "(.+)_(\\d)",
+                                     names_to = c(".value","id"))
   }
   return(data)
 }

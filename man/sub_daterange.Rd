@@ -2,7 +2,7 @@
 % Please edit documentation in R/subset_daterange.R
 \name{sub_daterange}
 \alias{sub_daterange}
-\title{Title}
+\title{Function that returns a subset of data within the given daterange}
 \usage{
 sub_daterange(data, daterange, datecol = "date")
 }
@@ -17,5 +17,5 @@ sub_daterange(data, daterange, datecol = "date")
 
 }
 \description{
-Title
+Function that returns a subset of data within the given daterange
 }
