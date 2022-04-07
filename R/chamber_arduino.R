@@ -144,7 +144,13 @@ chamber_arduino <- function(datelim,
       data_sub$messid[is.na(data_sub$zeit)] <- NA
       
       
-      flux <- lapply(gas,function(x) calc_flux(data_sub[!is.na(data_sub[,x]),],group="messid",Vol=Vol,Grundfl = Grundfl, gas = x, T_deg = "T_C"))
+      flux <- lapply(gas,function(x) 
+        calc_flux(data = data_sub[!is.na(data_sub[,x]),],
+                  group="messid",
+                  Vol=Vol,
+                  Grundfl = Grundfl,
+                  gas = x,
+                  T_deg = "T_C"))
       
       flux_ls <- lapply(flux,"[[",1)
       flux_ls <- lapply(flux_ls,function(x) {

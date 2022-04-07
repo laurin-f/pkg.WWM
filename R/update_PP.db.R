@@ -13,7 +13,7 @@
 #' @examples
 update_PP.db<-function(table.name="PP_chamber"){
   
-  file_pattern <- "\\d{8}.+TXT"
+  file_pattern <- "\\d+.+TXT"
   path <- PP_datapfad
   
   #namen der bereits in der db existierenden files laden

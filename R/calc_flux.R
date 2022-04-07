@@ -12,6 +12,7 @@
 #' @param aggregate sollen die Werte nach group aggregiert werden
 #'
 #' @return data.frame with flux in different units for each group
+#' @import dplyr
 #' @export
 #'
 #' @examples calc_flux(split,Vol=Vol_ml,tracer_conc = 100)
@@ -91,7 +92,12 @@ calc_flux <- function(data,
   }
 
   if(is.character(T_deg)){
-    T_df <- data %>% group_by(messid) %>% filter(!is.na(messid)) %>% summarise_at(T_deg,list(~mean(.,na.rm=T))) %>% as.data.frame()
+    T_df <- data %>% 
+      dplyr::group_by(messid) %>% 
+      dplyr::filter(!is.na(messid)) %>% 
+      dplyr::summarise_at(T_deg,list(~mean(.,na.rm=T))) %>% 
+      as.data.frame()
+    
     T_deg <- T_df[,T_deg]
   }
   #######################################
