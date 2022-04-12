@@ -66,25 +66,34 @@ update_PP.db<-function(table.name="PP_chamber"){
     }else{
       
       #V to Pa
-      data[,paste0("P_",1:6)] <- V_to_Pa(data[,paste0("P_",1:6)])
+      data[,paste0("P_",1:6)] <- V_to_Pa(data[,paste0("P_",1:6)])*(-1)#* mal-1 weil die Sensoren falsch engschlossen sind und deshalb ein inverses Signal geben
+      
       
       date <- date_ms_as_int(data$date_int)
-      t_diff <- as.numeric(median(difftime(date[-1],date[-nrow(data)],"secs")))
       
-      #####################
-      #P_filter und PPC
-      fs <- 1 / round(t_diff,1)#1/s = Hz
-      fpass <- c(0.003,0.1)
-      wpass <- fpass / (fs /2)
+      #points where time difference to previous point is more than one hour
+      date_diff <- diff_time(date)
+      from <- c(1,which(date_diff > 3600))
+      to <- c(from[-1]-1,length(date))
       
-      
-      bpfilter <- gsignal::butter(n=3,w=wpass,type="pass")
-      for(i in 1:6){
-        data[,paste0("P_filter_",i)] <- gsignal::filtfilt(bpfilter,data[,paste0("P_",i)])
-        abs_diff_i <- abs(c(NA,diff(data[,paste0("P_filter_",i)])))
-        data[,paste0("PPC_",i)] <- fs*RcppRoll::roll_mean(abs_diff_i,30*60*fs,fill=NA)
+      for(j in seq_along(from)){
+        ID <- from[j]:to[j]
+        t_diff <- median(diff_time(date[ID]),na.rm=T)
+        
+        #####################
+        #P_filter und PPC
+        fs <- 1 / round(t_diff,1)#1/s = Hz
+        fpass <- c(0.003,0.1)
+        wpass <- fpass / (fs /2)
+        
+        
+        bpfilter <- gsignal::butter(n=3,w=wpass,type="pass")
+        for(i in 1:6){
+          data[ID,paste0("P_filter_",i)] <- gsignal::filtfilt(bpfilter,data[ID,paste0("P_",i)])
+          abs_diff_i <- abs(c(NA,diff(data[ID,paste0("P_filter_",i)])))
+          data[ID,paste0("PPC_",i)] <- fs*RcppRoll::roll_mean(abs_diff_i,30*60*fs,fill=NA)
+        }
       }
-      
       #db verbinden
       con<-RSQLite::dbConnect(RSQLite::SQLite(),paste0(sqlpfad,"PP.db"))
       #falls tabelle in db nicht vorhanden wird sie hier erstellt

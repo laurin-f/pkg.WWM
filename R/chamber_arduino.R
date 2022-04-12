@@ -101,12 +101,12 @@ chamber_arduino <- function(datelim,
       print(paste0("no ", gga, " data in datelim"))
     }
   }
-  if(!all(gas %in% colnames(data_sub))){
-    warning("colums ",paste(gas[!gas %in% names(data_sub)],collapse = " and ")," don't exist and are removed from gas")
-    gas <- gas[gas %in% names(data_sub)]
-  }
   
   if(exists("data_sub")){
+    if(!all(gas %in% colnames(data_sub))){
+      warning("colums ",paste(gas[!gas %in% names(data_sub)],collapse = " and ")," don't exist and are removed from gas")
+      gas <- gas[gas %in% names(data_sub)]
+    }
     ################
     #kammermessungen trennen
     
