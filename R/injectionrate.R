@@ -44,6 +44,7 @@ injectionrate <- function(datelim,
                           data = NULL,
                           return_data=F,
                           colname = "CO2",
+                          round_intervall = "1 min",
                           adj_openings=T,
                           ...){
 
@@ -80,7 +81,8 @@ injectionrate <- function(datelim,
                          t_max=t_max,
                          t_init = t_init,
                          t_min=t_min,
-                         adj_openings = adj_openings)
+                         adj_openings = adj_openings,
+                         round_intervall = round_intervall)
 
   #Pumpstufen den messid's zuordnen
   if(length(Pumpstufen) == 1){

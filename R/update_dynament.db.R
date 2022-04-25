@@ -165,8 +165,9 @@ update_dynament.db<-function(table.name="dynament_test"){
           #CO2 von mV in ppm umrechnen
           CO2_cols <- grep("CO2", colnames(data))
           data[, CO2_cols][which(data[,CO2_cols] > 2.7,arr.ind = T)]<-NA
-          data[, CO2_cols][which(data[,CO2_cols] < 0.25,arr.ind = T)]<-NA
+          #data[, CO2_cols][which(data[,CO2_cols] < 0.25,arr.ind = T)]<-NA
           data[,CO2_cols] <- (data[,CO2_cols]-0.4)/1.6*5000
+          data[, CO2_cols][which(data[,CO2_cols] <= 0,arr.ind = T)]<-NA
           colnames.data.old <- colnames(data)
           colnames(data)<-str_replace(colnames(data), "_dpth\\d_smp\\d$", "")
           ################hiervor muss noch korrigiert werden

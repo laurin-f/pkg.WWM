@@ -32,7 +32,7 @@ rm_file_from_db <- function(filename,
   query<-paste0(query," WHERE date_int >= ",from," AND date_int <= ",to)
   # query2<-paste0(query2," WHERE date_int >= ",from," AND date_int <= ",to)
 
-  con<-dbConnect(RSQLite::SQLite(),paste0(sqlpath,db_name))
+  con<-dbConnect(RSQLite::SQLite(),paste0(sqlpfad,db_name))
   #daten abrufen
   rs <- dbSendQuery(con,query)
   dbClearResult(rs)

@@ -25,9 +25,14 @@ chamber_arduino <- function(datelim,
   Kammer <-
     readxl::read_xlsx(paste0(metapfad, "Kammermessungen/Kammer_Volumen.xlsx"),
                       sheet = "automatische Kammer")
-  Vol <- Kammer$Kammer_Volumen_cm3
+  Vol_kammer <- Kammer$Kammer_Volumen_cm3
   Grundfl <- Kammer$Kammer_Grundfl_cm2
   
+  kragen <-
+    readxl::read_xlsx(paste0(metapfad,"PP_Kammer/Kammermessungen.xlsx"), sheet = 2)
+  height <- kragen$height_cm
+  
+  Vol <- Vol_kammer + Grundfl * height
   ##########################################
   #daten laden
   if(is.null(data)){
