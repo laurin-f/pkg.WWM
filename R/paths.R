@@ -21,6 +21,7 @@ sqlpfad<-paste0(hauptpfad,"Daten/aufbereiteteDaten/SQLite/")
 samplerpfad <- paste0(hauptpfad,"Daten/aufbereiteteDaten/sampler_data/")
 comsolpfad<- paste0(hauptpfad,"Daten/aufbereiteteDaten/COMSOL/")
 kammer_datapfad <- paste0(hauptpfad,"Daten/aufbereiteteDaten/Kammermessungen/")
+datapfad_PP_Kammer <- paste0(hauptpfad,"Daten/aufbereiteteDaten/PP_Kammer/") 
 
 #metadaten
 metapfad<-paste0(hauptpfad,"Daten/Metadaten/")

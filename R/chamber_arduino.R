@@ -30,7 +30,13 @@ chamber_arduino <- function(datelim,
   
   kragen <-
     readxl::read_xlsx(paste0(metapfad,"PP_Kammer/Kammermessungen.xlsx"), sheet = 2)
-  height <- kragen$height_cm
+  
+  if(is.character(datelim)){
+    datelim <- ymd_hm(datelim)
+  }
+  
+  kragen_id <- tail(which(datelim[1]-kragen$datum > 0),1)
+  height <- kragen$height_cm[kragen_id]
   
   Vol <- Vol_kammer + Grundfl * height
   ##########################################
@@ -38,9 +44,7 @@ chamber_arduino <- function(datelim,
   if(is.null(data)){
     files <- list.files(chamber_arduino_pfad,pattern = "_chamber",full.names = F)
     
-    if(is.character(datelim)){
-      datelim <- ymd_hm(datelim)
-    }
+
     ##subset of files with date in datelim
     file_date <- lubridate::ymd(stringr::str_extract(files,"^\\d{6}"))
     dates <- lubridate::date(datelim)

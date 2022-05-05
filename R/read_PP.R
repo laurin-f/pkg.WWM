@@ -12,7 +12,8 @@
 read_PP <- function(datelim=NULL, #Zeitrahmen der geladen werden soll
                     cols="*",
                     table.name="PP_chamber",
-                    format="long") {
+                    format="long",
+                    corfac = T) {
   update_PP.db()
   
   #db verbinden
@@ -45,14 +46,19 @@ read_PP <- function(datelim=NULL, #Zeitrahmen der geladen werden soll
   #date_int weglassen
   data<-data[,colnames(data)!="date_int"]
   
-  #data[,paste0("P_",1:6)] <- V_to_Pa(data[,paste0("P_",1:6)])
-  
+  if(corfac){
+    load(file=paste0(datapfad_PP_Kammer,"P_corfac.RData"))
+    
+    for(i in 1:5){
+      data[,paste0("P_",i)] <- data[,paste0("P_",i)]-P_corfac$P_mean[i]
+    }
+  }
   
   if(format == "long"){
     data <- tidyr::pivot_longer(data,
-                                     matches("PPC|P|P_filter"),
-                                     names_pattern = "(.+)_(\\d)",
-                                     names_to = c(".value","id"))
+                                matches("PPC|P|P_filter"),
+                                names_pattern = "(.+)_(\\d)",
+                                names_to = c(".value","id"))
   }
   return(data)
 }
