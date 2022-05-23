@@ -148,7 +148,15 @@ injection_arduino <- function(datelim,
         #   labs(x="",y=expression(CO[2]))+
         #   guides(col=F)
 
-        leave_NAtime_plot(data=flux_data,group="CO2",col="dummy")
+        
+        plt_data <- leave_NAtime_plot(data=flux_data,group="CO2",col="messid",plot=F)
+
+        p <- ggplot(plt_data)+
+          geom_line(aes(date,CO2,col=as.factor(messid),group=1))+
+          facet_wrap(~period,scales="free_x",nrow=1)+
+          theme(strip.text.x = element_blank())
+        
+        adj_grob_size(p,plt_data)
       }
       if(plot == "flux"){
         p <- ggplot(flux)+

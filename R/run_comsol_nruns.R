@@ -82,7 +82,7 @@ run_comsol_nruns <- function(data = data,
   #Comsol ausführen
   ##############################################
   #name für outputfiles
-  date_chr <- format(mod_dates, "%m_%d_%H_%M")
+  date_chr <- format(mod_dates, "%y_%m_%d_%H_%M")
   outfile_names <-
     paste0(modelname, "_", offset_method, "_", date_chr, ".txt")
   
@@ -116,7 +116,7 @@ run_comsol_nruns <- function(data = data,
   ########################################################
   #alle dateien mit der gewünschten methode und datum einlesen (read_all)
   if (read_all == T) {
-    date_pattern <- "\\d{2}(_\\d{2}){2,3}"
+    date_pattern <- "\\d{2}(_\\d{2}){4}"
     file_pattern <-
       paste(modelname, offset_method, date_pattern, sep = "_")
     if (!is.null(file_suffix)) {
@@ -133,15 +133,11 @@ run_comsol_nruns <- function(data = data,
     mod_date_all_chr <-
       sort(unique(str_extract(outfile_names, date_pattern)))
     
-    mod_date_all_chr_pad <-
-      ifelse(nchar(mod_date_all_chr) == 8,
-             paste0(mod_date_all_chr, "_00"),
-             mod_date_all_chr)
     
-    mod_dates_all <- ymd_hm(paste("2020", mod_date_all_chr_pad))
+    mod_dates_all <- ymd_hm(mod_date_all_chr)
     mod_dates_all <- mod_dates_all[mod_dates_all %in% data$date]
     
-    date_chr <- format(mod_dates_all, "%m_%d_%H_%M")
+    date_chr <- format(mod_dates_all, "%y_%m_%d_%H_%M")
     outfile_names <-
       paste0(modelname, "_", offset_method, "_", date_chr, ".txt")
     
@@ -177,65 +173,71 @@ run_comsol_nruns <- function(data = data,
   #read loop
   #######################################
   for (j in seq_along(mod_dates_all)) {
-    CO2_optim <- read.csv(outfiles[j],
-                          skip = 9,
-                          sep = "",
-                          header = F)
-    
-    colnames(CO2_optim) <-
-      c("r", "z", "CO2_mod_mol_m3", paste0("DS_", 1:n_DS))
-    CO2_mod <- CO2_optim[, 1:3]
-    best_DS <- CO2_optim[1, 4:(n_DS + 3)]
-    
-    #line <- readLines(outfiles[j],n = 1)
-    #injection_rate <- stringr::str_split(line," ")[[1]][2]
-    injection_rate <- CO2_optim[1,7]
-    
-    obs_j <- data_list[[as.character(mod_dates_all)[j]]]
-    
-    if (n_DS == 3) {
-      schicht_grenzen <- c(0, -10.5, -21)
-      tiefen <- c(-5.25, -15.75, -24.5)
-    }
-    
-    schicht_untergrenzen <- c(schicht_grenzen[-1] + 0.01, -z_soil_cm)
-    DS_profil <-
-      data.frame(
-        DS = unlist(best_DS),
-        tiefe = tiefen,
-        top = schicht_grenzen,
-        bottom = schicht_untergrenzen
-      )
-    
-    for (i in 1:nrow(DS_profil)) {
-      tiefenID <-
-        obs_j$tiefe <= DS_profil$top[i] &
-        obs_j$tiefe > DS_profil$bottom[i]
+    lines <- readLines(outfiles[j])
+    if(length(lines)>0){
+      CO2_optim <- read.csv(outfiles[j],
+                            skip = 9,
+                            sep = "",
+                            header = F)
       
-      DS_profil$D0[i] <- mean(unlist(obs_j[tiefenID, c("D0")]))
-    }
-    
-    
-    ##################################################
-    #Flux und DS in F_Comsol schreiben
-    if (n_DS > 1) {
+      colnames(CO2_optim) <-
+        c("r", "z", "CO2_mod_mol_m3", paste0("DS_", 1:n_DS))
+      CO2_mod <- CO2_optim[, 1:3]
+      best_DS <- CO2_optim[1, 4:(n_DS + 3)]
       
-      for (k in 1:n_DS) {
-        F_Comsol[F_Comsol$date == mod_dates_all[[j]], "mod_inj_rate"] <-
-          injection_rate
-        F_Comsol[F_Comsol$date == mod_dates_all[[j]], paste0("DSD0", k)] <-
-          DS_profil$DS[k] / DS_profil$D0[k]
-        F_Comsol[F_Comsol$date == mod_dates_all[[j]], paste0("DS", k)] <-
-          DS_profil$DS[k]
+      #line <- readLines(outfiles[j],n = 1)
+      #injection_rate <- stringr::str_split(line," ")[[1]][2]
+      injection_rate <- CO2_optim[1,7]
+      
+      obs_j <- data_list[[as.character(mod_dates_all)[j]]]
+      
+      if (n_DS == 3) {
+        schicht_grenzen <- c(0, -10.5, -21)
+        tiefen <- c(-5.25, -15.75, -24.5)
       }
-    } else{
-      F_Comsol[F_Comsol$date == mod_dates_all[[j]], "DSD0"] <-
-        best_DS / mean(obs_mod$D0, na.rm = T)
-      F_Comsol[F_Comsol$date == mod_dates_all[[j]], "DS"] <- best_DS
+      
+      schicht_untergrenzen <- c(schicht_grenzen[-1] + 0.01, -z_soil_cm)
+      DS_profil <-
+        data.frame(
+          DS = unlist(best_DS),
+          tiefe = tiefen,
+          top = schicht_grenzen,
+          bottom = schicht_untergrenzen
+        )
+      
+      for (i in 1:nrow(DS_profil)) {
+        tiefenID <-
+          obs_j$tiefe <= DS_profil$top[i] &
+          obs_j$tiefe > DS_profil$bottom[i]
+        
+        DS_profil$D0[i] <- mean(unlist(obs_j[tiefenID, c("D0")]))
+      }
+      
+      
+      ##################################################
+      #Flux und DS in F_Comsol schreiben
+      if (n_DS > 1) {
+        
+        for (k in 1:n_DS) {
+          F_Comsol[F_Comsol$date == mod_dates_all[[j]], "mod_inj_rate"] <-
+            injection_rate
+          F_Comsol[F_Comsol$date == mod_dates_all[[j]], paste0("DSD0", k)] <-
+            DS_profil$DS[k] / DS_profil$D0[k]
+          F_Comsol[F_Comsol$date == mod_dates_all[[j]], paste0("DS", k)] <-
+            DS_profil$DS[k]
+        }
+      } else{
+        F_Comsol[F_Comsol$date == mod_dates_all[[j]], "DSD0"] <-
+          best_DS / mean(obs_mod$D0, na.rm = T)
+        F_Comsol[F_Comsol$date == mod_dates_all[[j]], "DS"] <- best_DS
+      }
+      
+      
+    }else{
+      file.remove(outfiles[j])
     }
-    
-    
   }
+  
   if(long == T){
     F_Comsol <- tidyr::pivot_longer(F_Comsol,matches("DS"),names_pattern = "(.+)(\\d)",names_to = c(".value","tiefe"))
     F_Comsol <- as.data.frame(F_Comsol)

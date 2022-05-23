@@ -156,7 +156,12 @@ comsol_exe_nruns <- function(modelname,
           }
           
         }#if jk
-        
+        if(k == nruns){
+          if(comsolbatch_CPU()){
+            cat("\n")
+            system("taskkill /IM comsolbatch.exe /F",show.output.on.console=T)
+          }
+        }
       }# for k
     }# for j
     close(pb)
@@ -168,6 +173,12 @@ comsol_exe_nruns <- function(modelname,
 
 
 ####################################
+#' Title
+#'
+#' @return
+#' @export
+#'
+#' @examples
 comsolbatch_CPU<-function(){
   #Liste erzeugen in der der Name und die CPU aller laufender Prozesse steht
   tasklist<-system(

@@ -178,11 +178,13 @@ chamber_arduino <- function(datelim,
         p <- ggplot(subset(data_merge,!is.na(messid)))+
           geom_smooth(aes(zeit,get(paste0(gas[1],"_tara"))),method="lm",se=F,col=1,linetype=2,lwd=0.7)+
           geom_line(aes(zeit,get(paste0(gas[1],"_tara")),col=gas[1]))+
-          #facet_wrap(~messid)+
-          labs(y=paste0(gas[1],"(ppm) tara"))+
-          guides(col=F)
+          labs(y=paste0(gas[1],"(ppm) tara"))#+
         if(length(gas) > 1){
-          p <- p+geom_line(aes(zeit,get(paste0(gas[2],"_tara")),col=gas[2]))
+          p <- p+geom_line(data = subset(data_merge,!is.na(get(paste0(gas[2],"_tara")))),aes(zeit,get(paste0(gas[2],"_tara")),col=gas[2]))+
+            labs(col="")
+        }else{
+          p <- p+
+            guides(col=F)
         }
         if(max(data_merge$messid,na.rm=T) > 50){
           p <- p+
@@ -197,7 +199,7 @@ chamber_arduino <- function(datelim,
         p <- ggplot(data_merge)
         if(length(gas) > 1){
           p <- p+
-            geom_line(aes(date,get(gas[2]),col=gas[2],group=1))+
+            geom_line(data = subset(data_merge,!is.na(get(gas[2]))),aes(date,get(gas[2]),col=gas[2]))+
             ggnewscale::new_scale_color()
         }
         p <- p+
