@@ -83,7 +83,7 @@ run_comsol <- function(data = data,
   #Comsol ausführen
   ##############################################
   #name für outputfiles
-  date_chr <- format(mod_dates, "%m_%d_%H_%M")
+  date_chr <- format(mod_dates, "%y_%m_%d_%H_%M")
   outfile_names <-
     paste0(modelname, "_", offset_method, "_", date_chr, ".txt")
   
@@ -142,7 +142,7 @@ run_comsol <- function(data = data,
   ########################################################
   #alle dateien mit der gewünschten methode und datum einlesen (read_all)
   if (read_all == T) {
-    date_pattern <- "\\d{2}(_\\d{2}){2,3}"
+    date_pattern <- "\\d{2}(_\\d{2}){4}"
     file_pattern <-
       paste(modelname, offset_method, date_pattern, sep = "_")
     if (!is.null(file_suffix)) {
@@ -159,15 +159,11 @@ run_comsol <- function(data = data,
     mod_date_all_chr <-
       sort(unique(str_extract(outfile_names, date_pattern)))
     
-    mod_date_all_chr_pad <-
-      ifelse(nchar(mod_date_all_chr) == 8,
-             paste0(mod_date_all_chr, "_00"),
-             mod_date_all_chr)
     
-    mod_dates_all <- ymd_hm(paste("2020", mod_date_all_chr_pad))
+    mod_dates_all <- ymd_hm(mod_date_all_chr)
     mod_dates_all <- mod_dates_all[mod_dates_all %in% data$date]
     
-    date_chr <- format(mod_dates_all, "%m_%d_%H_%M")
+    date_chr <- format(mod_dates_all, "%y_%m_%d_%H_%M")
     outfile_names <-
       paste0(modelname, "_", offset_method, "_", date_chr, ".txt")
     

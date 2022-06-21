@@ -87,7 +87,9 @@ comsol_exe_nruns <- function(modelname,
       
       for(k in 1:nruns){
         if(break_for){
-          break
+          #break
+          shell(cmd,translate=T,wait=F)
+          cat(paste("/nbreak_for j=",j,"k=",k))
         }
         jk <- j+k-1
         setTxtProgressBar(pb,jk)
@@ -109,7 +111,7 @@ comsol_exe_nruns <- function(modelname,
           while(!file.exists(outfile_full)){
             Sys.sleep(1.1)
             counter <- counter + 1
-            
+            cat(paste0("counter=",counter))
             if(counter > 20){
               if(!comsolbatch_CPU()){
                 break_for <- T
