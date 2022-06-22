@@ -177,10 +177,10 @@ chamber_arduino <- function(datelim,
         
         p <- ggplot(subset(data_merge,!is.na(messid)))+
           geom_smooth(aes(zeit,get(paste0(gas[1],"_tara"))),method="lm",se=F,col=1,linetype=2,lwd=0.7)+
-          geom_line(aes(zeit,get(paste0(gas[1],"_tara")),col=gas[1]))+
+          geom_line(aes(zeit,get(paste0(gas[1],"_tara")),col=gas[1],group=messid))+
           labs(y=paste0(gas[1],"(ppm) tara"))#+
         if(length(gas) > 1){
-          p <- p+geom_line(data = subset(data_merge,!is.na(get(paste0(gas[2],"_tara")))),aes(zeit,get(paste0(gas[2],"_tara")),col=gas[2]))+
+          p <- p+geom_line(data = subset(data_merge,!is.na(get(paste0(gas[2],"_tara")))),aes(zeit,get(paste0(gas[2],"_tara")),col=gas[2],group=messid))+
             labs(col="")
         }else{
           p <- p+

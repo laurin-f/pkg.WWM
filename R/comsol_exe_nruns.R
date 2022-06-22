@@ -86,11 +86,6 @@ comsol_exe_nruns <- function(modelname,
       }
       
       for(k in 1:nruns){
-        if(break_for){
-          #break
-          shell(cmd,translate=T,wait=F)
-          cat(paste("/nbreak_for j=",j,"k=",k))
-        }
         jk <- j+k-1
         setTxtProgressBar(pb,jk)
         
@@ -103,6 +98,12 @@ comsol_exe_nruns <- function(modelname,
         #outfile_names_l <- stringr::str_replace(outfile_names,".txt",paste0("inj",l,".txt"))
         #new name for outputfile with path
         if(jk <= length(outfile_names)){
+          if(break_for & k <= nruns){
+            #break
+            break_for <- F
+            shell(cmd,translate=T,wait=F)
+            cat(paste("\nbreak_for j=",j,"k=",k))
+          }
           #cat(paste("date ",jk,": ",outfile_names[jk]))
           outfile_jk <- paste0(comsolpfad,outfile_names[jk])
           
@@ -111,13 +112,13 @@ comsol_exe_nruns <- function(modelname,
           while(!file.exists(outfile_full)){
             Sys.sleep(1.1)
             counter <- counter + 1
-            cat(paste0("counter=",counter))
-            if(counter > 20){
-              if(!comsolbatch_CPU()){
-                break_for <- T
-                break
-              }
+            #if(counter > 2){
+            if(!comsolbatch_CPU()){
+              break_for <- T
+              cat(paste0("\nbreaking at counter=",counter))
+              break
             }
+            #}
             if(file.exists(probe_table)){
               if(probe == F){
                 if(k < nruns){
