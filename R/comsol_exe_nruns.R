@@ -21,15 +21,15 @@ comsol_exe_nruns <- function(modelname,
                              COMSOL_exepath = COMSOL_exepfad,
                              job = "b1",
                              overwrite = F,
-                             inj_fun = "mean",
+                             #inj_fun = "mean",
                              nruns=10) {
   
   outfile_full <- paste0(comsolpfad,outfile_raw)
   probe_table <- paste0(comsolpfad,"Probe_table.txt")
   probe <- F
   break_for <- F
-  par_file <- paste0(comsolpfad,"input_pars.txt")
-  cmd <- paste0("cd ",COMSOL_exepath,"&& comsolbatch.exe -inputfile ",COMSOL_progammpath,modelname,".mph -outputfile ",COMSOL_progammpath,modelname,"_solved.mph -job ",job," -paramfile ",par_file)
+  #par_file <- paste0(comsolpfad,"input_pars.txt")
+  cmd <- paste0("cd ",COMSOL_exepath,"&& comsolbatch.exe -inputfile ",COMSOL_progammpath,modelname,".mph -outputfile ",COMSOL_progammpath,modelname,"_solved.mph -job ",job)#," -paramfile ",par_file)
   
   if(file.exists(outfile_full)){
     file.remove(outfile_full)
@@ -58,26 +58,29 @@ comsol_exe_nruns <- function(modelname,
       cat("\n")
       system("taskkill /IM comsolbatch.exe /F",show.output.on.console=T)
     }
+    
     for (j in seq(1,length(data_list),by=nruns)) {
       
       
       sub_j <- data_list[j:(j+nruns-1)]
+      
       #injectionsrate zum Zeitpunkt j
-      injection_range <- range(sapply(sub_j,function(x) x$inj_mol_m2_s[1],simplify = T))
-      #for(l in 1:2){
-      
-      #injection_rate <- injection_range[l]
-      fn <- get(inj_fun,mode="function")
-      injection_rate <- fn(injection_range)
-      names(injection_rate) <- "injection_rate"
-      write.table(t(injection_rate),file=par_file,row.names = F,quote = F,sep = " ")
-      
+      # injection_range <- range(sapply(sub_j,function(x) x$inj_mol_m2_s[1],simplify = T))
+      # #for(l in 1:2){
+      # 
+      # #injection_rate <- injection_range[l]
+      # fn <- get(inj_fun,mode="function")
+      # injection_rate <- fn(injection_range)
+      # names(injection_rate) <- "injection_rate"
+      # write.table(t(injection_rate),file=par_file,row.names = F,quote = F,sep = " ")
+      # 
       
       
       #schreibe messwerte in files die in COMSOL als Objective verwendet werden
       for (i in 1:7) {
+        cols <- c("CO2_mol_per_m3","inj_mol_m2_s")
         write.table(
-          sub_j[[1]][sub_j[[1]]$tiefe == (1:7 * -3.5)[i], "CO2_mol_per_m3"],
+          sub_j[[1]][sub_j[[1]]$tiefe == (1:7 * -3.5)[i], cols],
           paste0(metapfad_comsol, "dom", i, ".csv"),
           col.names = F,
           row.names = F,
@@ -123,8 +126,9 @@ comsol_exe_nruns <- function(modelname,
               if(probe == F){
                 if(k < nruns){
                   for (i in 1:7) {
+                    cols <- c("CO2_mol_per_m3","inj_mol_m2_s")
                     write.table(
-                      sub_j[[k+1]][sub_j[[k+1]]$tiefe == (1:7 * -3.5)[i], "CO2_mol_per_m3"],
+                      sub_j[[k+1]][sub_j[[k+1]]$tiefe == (1:7 * -3.5)[i], cols],
                       paste0(metapfad_comsol, "dom", i, ".csv"),
                       col.names = F,
                       row.names = F,
@@ -168,6 +172,7 @@ comsol_exe_nruns <- function(modelname,
       }# for k
     }# for j
     close(pb)
+    cat("finished comsol loop")
   }
 }
 
