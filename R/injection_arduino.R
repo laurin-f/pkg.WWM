@@ -56,7 +56,7 @@ injection_arduino <- function(datelim,
       ###
       #aufbereiten
       data$CO2 <- as.numeric(data$CO2)
-      data$CO2[data$CO2 < 300| data$CO2 > 7500] <- NA
+      data$CO2[data$CO2 < 300| data$CO2 > 7000] <- NA
       data$CO2 <- imputeTS::na_interpolation(data$CO2,maxgap = 10)
 
       data_sub <- subset(data,date > datelim[1] & date < datelim[2] & !is.na(data$date))
@@ -69,10 +69,12 @@ injection_arduino <- function(datelim,
 
   probe1 <- read_sampler(datelim=datelim,format="wide")
   if(nrow(probe1) > 0){
-    probe1$T_C
     data_sub <- merge(data_sub,probe1[,c("date","T_C")],all = T)
-
-    data_sub$T_C <- imputeTS::na_interpolation(data_sub$T_C)
+    
+    if(length(which(!is.na(data_sub$T_C))) > 1){
+      data_sub$T_C <- imputeTS::na_interpolation(data_sub$T_C)
+    }
+    
     data_sub <- subset(data_sub,!is.na(inj))
   }
   ################
@@ -109,7 +111,10 @@ injection_arduino <- function(datelim,
         #messid als durchlaufende Nummer f�r jede closing opening periode
         data_sub$messid[closingID[i]:openingID[i]] <- i
       }
+      
       data_sub$zeit[data_sub$zeit > t_max | data_sub$zeit < 0] <- NA
+      len_messid <- sapply(seq_along(openingID), function(x) diff(range(data_sub$zeit[which(data_sub$messid == x)],na.rm=T)))
+      data_sub$zeit[data_sub$messid %in%  which(len_messid < t_min)] <- NA
       data_sub$messid[is.na(data_sub$zeit)] <- NA
 
 
@@ -153,6 +158,9 @@ injection_arduino <- function(datelim,
 
         p <- ggplot(plt_data)+
           geom_line(aes(date,CO2,col=as.factor(messid),group=1))+
+          geom_point(data = subset(plt_data, date %in% opening_date),aes(date,CO2,shape="opening"),col=1)+
+          geom_point(data = subset(plt_data, date %in% closing_date),aes(date,CO2,shape="closing"),col=2)+
+          guides(shape = guide_legend(override.aes = list(col = 2:1)))+
           facet_wrap(~period,scales="free_x",nrow=1)+
           theme(strip.text.x = element_blank())
         
