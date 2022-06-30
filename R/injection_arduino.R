@@ -112,8 +112,12 @@ injection_arduino <- function(datelim,
         data_sub$messid[closingID[i]:openingID[i]] <- i
       }
       
+      #zeitraum kürzen zwischen t_init und t_max 
       data_sub$zeit[data_sub$zeit > t_max | data_sub$zeit < 0] <- NA
+      
+      #Die länge der jeweiligen Messungen nach der kürzung 
       len_messid <- sapply(seq_along(openingID), function(x) diff(range(data_sub$zeit[which(data_sub$messid == x)],na.rm=T)))
+      #wenn die Effektiv benutzte Messzeit kleiner als t_min ist wird die Messung verworfen
       data_sub$zeit[data_sub$messid %in%  which(len_messid < t_min)] <- NA
       data_sub$messid[is.na(data_sub$zeit)] <- NA
 

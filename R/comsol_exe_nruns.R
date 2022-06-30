@@ -42,6 +42,7 @@ comsol_exe_nruns <- function(modelname,
       cat(paste(paste(outfile_names[existing_files],collapse = "\n"),"\nalready exist set overwrite = T to replace them\n"))
     }
     data_list <- data_list[!existing_files]
+    
     outfile_names <- outfile_names[!existing_files]
   }
   
@@ -77,16 +78,18 @@ comsol_exe_nruns <- function(modelname,
       
       
       #schreibe messwerte in files die in COMSOL als Objective verwendet werden
-      for (i in 1:7) {
-        cols <- c("CO2_mol_per_m3","inj_mol_m2_s")
+      #for (i in 1:7) {
+        cols <- c("CO2_mol_per_m3","inj_mol_m2_s","date_int")
+        
         write.table(
-          sub_j[[1]][sub_j[[1]]$tiefe == (1:7 * -3.5)[i], cols],
-          paste0(metapfad_comsol, "dom", i, ".csv"),
+          cbind(t(sub_j[[1]][order(-sub_j[[1]]$tiefe), cols[1]]),
+              unique(sub_j[[1]][,cols[2:3]])),
+          paste0(metapfad_comsol, "GlobalLeastSquares.csv"),
           col.names = F,
           row.names = F,
           sep = ","
         )
-      }
+      #}
       
       for(k in 1:nruns){
         jk <- j+k-1
@@ -124,17 +127,16 @@ comsol_exe_nruns <- function(modelname,
             #}
             if(file.exists(probe_table)){
               if(probe == F){
-                if(k < nruns){
-                  for (i in 1:7) {
-                    cols <- c("CO2_mol_per_m3","inj_mol_m2_s")
-                    write.table(
-                      sub_j[[k+1]][sub_j[[k+1]]$tiefe == (1:7 * -3.5)[i], cols],
-                      paste0(metapfad_comsol, "dom", i, ".csv"),
-                      col.names = F,
-                      row.names = F,
-                      sep = ","
-                    )
-                  }
+                #if(k < nruns & !is.null(sub_j[[k +1]]$tiefe)){
+                if(jk < length(outfile_names)){
+                  write.table(
+                    cbind(t(sub_j[[k + 1]][order(-sub_j[[k + 1]]$tiefe), cols[1]]),
+                          unique(sub_j[[k + 1]][,cols[2:3]])),
+                    paste0(metapfad_comsol, "GlobalLeastSquares.csv"),
+                    col.names = F,
+                    row.names = F,
+                    sep = ","
+                  )
                   probe <- T
                 }
               }

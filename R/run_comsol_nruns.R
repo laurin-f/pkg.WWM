@@ -57,7 +57,7 @@ run_comsol_nruns <- function(data = data,
                p_kPa = data$PressureActual_hPa / 10,
                T_C = data$T_soil)
   #negative werte auf null setzen
-  data$CO2_mol_per_m3[data$tiefe == 0] <- 0
+  data <- subset(data,tiefe != 0)
   data$CO2_mol_per_m3[(data$CO2_mol_per_m3) < 0] <- 0
   
   #model coordinates
@@ -70,6 +70,7 @@ run_comsol_nruns <- function(data = data,
       data[data$date == x, c(
         "tiefe",
         "date",
+        "date_int",
         "CO2_mol_per_m3",
         "inj_mol_m2_s",
         "T_soil",
@@ -181,13 +182,14 @@ run_comsol_nruns <- function(data = data,
                             header = F)
       
       colnames(CO2_optim) <-
-        c("r", "z", "CO2_mod_mol_m3", paste0("DS_", 1:n_DS))
+        c("r", "z", "CO2_mod_mol_m3", paste0("DS_", 1:n_DS),"injection_rate","date_int")
       CO2_mod <- CO2_optim[, 1:3]
       best_DS <- CO2_optim[1, 4:(n_DS + 3)]
       
       #line <- readLines(outfiles[j],n = 1)
       #injection_rate <- stringr::str_split(line," ")[[1]][2]
       injection_rate <- CO2_optim[1,7]
+      mod_date <- lubridate::as_datetime(CO2_optim[1,8])
       
       obs_j <- data_list[[as.character(mod_dates_all)[j]]]
       
@@ -221,6 +223,8 @@ run_comsol_nruns <- function(data = data,
         for (k in 1:n_DS) {
           F_Comsol[F_Comsol$date == mod_dates_all[[j]], "mod_inj_rate"] <-
             injection_rate
+          F_Comsol[F_Comsol$date == mod_dates_all[[j]], "mod_date"] <-
+            mod_date
           F_Comsol[F_Comsol$date == mod_dates_all[[j]], paste0("DSD0", k)] <-
             DS_profil$DS[k] / DS_profil$D0[k]
           F_Comsol[F_Comsol$date == mod_dates_all[[j]], paste0("DS", k)] <-
