@@ -76,6 +76,8 @@ injection_arduino <- function(datelim,
     }
     
     data_sub <- subset(data_sub,!is.na(inj))
+  }else{
+    data_sub$T_C <- NA
   }
   ################
   #kammermessungen trennen

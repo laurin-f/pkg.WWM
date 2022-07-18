@@ -181,8 +181,10 @@ run_comsol_nruns <- function(data = data,
                             sep = "",
                             header = F)
       
-      colnames(CO2_optim) <-
-        c("r", "z", "CO2_mod_mol_m3", paste0("DS_", 1:n_DS),"injection_rate","date_int")
+      names_raw <- stringr::str_split(lines[9],"\\s+",simplify = T)
+      names <- 
+        names_raw[names_raw%in%c("r", "z", "CO2_mod_mol_m3", paste0("DS_", 1:n_DS),"injection_rate","date_int")]
+      colnames(CO2_optim) <- names
       CO2_mod <- CO2_optim[, 1:3]
       best_DS <- CO2_optim[1, 4:(n_DS + 3)]
       

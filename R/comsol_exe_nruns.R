@@ -128,7 +128,7 @@ comsol_exe_nruns <- function(modelname,
             if(file.exists(probe_table)){
               if(probe == F){
                 #if(k < nruns & !is.null(sub_j[[k +1]]$tiefe)){
-                if(jk < length(outfile_names)){
+                if(k < nruns & jk < length(outfile_names)){
                   write.table(
                     cbind(t(sub_j[[k + 1]][order(-sub_j[[k + 1]]$tiefe), cols[1]]),
                           unique(sub_j[[k + 1]][,cols[2:3]])),

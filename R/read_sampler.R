@@ -18,8 +18,10 @@ read_sampler <- function(table.name="sampler1u2",format="long", ...){
   data_wide<-read_db(db.name="dynament.db",
                      table.name=table.name, ...)
   if(nrow(data_wide) == 0){
-    stop("no data in datelim")
-  }
+    warning("no data in datelim")
+    return(data_wide)
+
+  }else{
   if(grepl("sampler3",table.name)){
     temp_cols <- grep("temp",colnames(data_wide))
 
@@ -41,5 +43,6 @@ read_sampler <- function(table.name="sampler1u2",format="long", ...){
     return(as.data.frame(data_long))
   }else{
     return(as.data.frame(data_wide))
+  }
   }
 }
