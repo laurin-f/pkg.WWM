@@ -10,7 +10,7 @@
 #' @examples
 sub_daterange <- function(data,daterange,datecol="date") {
   data <- as.data.frame(data)
-  id <- data[,datecol] > min(daterange) & data[,datecol] < max(daterange)
+  id <- data[,datecol] >= min(daterange) & data[,datecol] <= max(daterange)
   return(data[id,])
 }
 #' Function that returns a vector with the IDs of the rows in data that lie in daterange
@@ -25,6 +25,6 @@ sub_daterange <- function(data,daterange,datecol="date") {
 #' @examples
 daterange_id <- function(data,daterange,datecol="date") {
   data <- as.data.frame(data)
-  id <- data[,datecol] > min(daterange) & data[,datecol] < max(daterange)
+  id <- data[,datecol] >= min(daterange) & data[,datecol] <= max(daterange)
   return(id)
 }
