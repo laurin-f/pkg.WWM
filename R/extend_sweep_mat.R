@@ -90,11 +90,24 @@ extend_sweep_mat <- function(filename = "freeSoil_anisotropy_sweep_2DS.txt",
   extend_wide <- tidyr::pivot_wider(sweep_extend,names_from = matches("DS"),names_sep=", ",values_from=CO2_mol_per_m3) %>% as.data.frame()
   rm(sweep_extend)
   
+  
+  mod_inj_rates <- unique(extend_wide$injection_rate)
+  sweep_colnames <- colnames(extend_wide[-(1:2)])
+  tiefen <- 150-unique(extend_wide$z)
+  
+  extend_arr <- array(dim = c(nrow(extend_wide)/2,ncol(extend_wide)-2,2))
+  for(i in 1:2){
+    extend_arr[,,i] <- as.matrix(subset(extend_wide[,-(1)],injection_rate == unique(extend_wide$injection_rate)[i]))[,-1]
+  }
+  
+  dimnames(extend_arr) <- list(tiefen,sweep_colnames,mod_inj_rates)
+  
   ###############
   #save
   ##############
   save(extend_long,file=paste0(comsolpfad,str_remove(filename,".txt"),"_extend_long.RData"))
-  save(extend_wide,file=paste0(comsolpfad,str_remove(filename,".txt"),"_extend_wide.RData"))
+  #save(extend_wide,extend_arr,file=paste0(comsolpfad,str_remove(filename,".txt"),"_extend_wide.RData"))
+  save(extend_arr,file=paste0(comsolpfad,str_remove(filename,".txt"),"_extend_arr.RData"))
 }
 
 
