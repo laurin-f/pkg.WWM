@@ -17,10 +17,11 @@
 #'
 #' @examples
 comsol_sweep <- function(data,
-                         intervall = "30 mins",
+                         intervall = "3 hours",
                          tracer_colname = "CO2_tracer_drift",
-                         filename = "freeSoil_anisotropy_sweep_2DS.txt",
+                         filename = "freeSoil_anisotropy_sweep_3DS.txt",
                          plot = F,
+                         extend  = F,
                          byout = 1e-7) {
   
   
@@ -28,13 +29,16 @@ comsol_sweep <- function(data,
   #Parameter die in der Datei gesweept wurden
   pars <- c(paste0("DS_",1:n_DS),"injection_rate")
   
+  if(extend){
   #######################
   #extend matrix
   if(!file.exists(paste0(comsolpfad,stringr::str_remove(filename,".txt"),"_extend_arr.RData"))){
     extend_sweep_mat(filename,byout = byout)
   }
   load(paste0(comsolpfad,stringr::str_remove(filename,".txt"),"_extend_arr.RData"))
-  
+  }else{
+    extend_arr <- read_sweep(filename,format = "array")
+  }
   ########################
   #format data
   data_agg <- data %>% 
@@ -113,12 +117,16 @@ comsol_sweep <- function(data,
     
     DS_df[i,"D0"] <- unique(CO2_obs$D0)
     DS_df[i,"RMSE"] <- best_rmse
-  
+    
+    
+    
     setTxtProgressBar(pb,i)
   }
   close(pb)
-  DS_long <- tidyr::pivot_longer(DS_df,matches("DS"),names_to = "tiefe",values_to = "DS")
+  DS_long <- tidyr::pivot_longer(DS_df,matches("DS"),names_to = "tiefe",names_prefix = "DS_",values_to = "DS")
   DS_long$DSD0 <- DS_long$DS / DS_long$D0
+  DS_long$tiefe <- as.numeric(DS_long$tiefe)
+  
   if(plot == "DS_time"){
     ggplot(DS_long)+
       geom_line(aes(date,DS,col=as.factor(tiefe)))
@@ -146,3 +154,4 @@ comsol_sweep <- function(data,
 # tictoc::toc()
 # plot(x)
 # test <- as.array(x)
+

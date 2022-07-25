@@ -14,32 +14,16 @@
 #' @examples
 extend_sweep_mat <- function(filename = "freeSoil_anisotropy_sweep_2DS.txt",
                              byout = 5e-8) {
-  sweep_lines <- readLines(paste0(comsolpfad,filename))
-  
   n_DS <- stringr::str_extract(filename,pattern = "\\d+(?=DS)") %>% as.numeric()
-  #Parameter die in der Datei gesweept wurden
+  # #Parameter die in der Datei gesweept wurden
   pars <- c(paste0("DS_",1:n_DS),"injection_rate")
-  #Regular Expression für die unterschiedlichen Werte die die Parameter annehmen
-  value_regexp <- "\\d+(\\.\\d+)?(E-\\d)?"
   
-  #Spaltennahmen der sweep datei ausschneiden
-  
-  colnames_sweep <- str_extract_all(sweep_lines[9],paste0("(?<=% )r|z|",paste0(pars,"=",value_regexp,collapse=", ")),simplify = T)
-  #ab Spalte 10 stehen die Werte in der Datei diese werden bei leerzeichen getrennt 
-  sweep_mat <- str_split(sweep_lines[10:length(sweep_lines)],"\\s+",simplify = T)
-  #die matrix als data.frame mit numerischen werden 
-  sweep_wide <- as.data.frame(apply(sweep_mat,2,as.numeric))
-  #Spaltennamen
-  colnames(sweep_wide) <- colnames_sweep
-  
-  sweep_long <- tidyr::pivot_longer(sweep_wide,cols=-(1:2),names_patter= paste0(paste(pars,collapse = "=(.*), "),"=(.*)"),values_to="CO2_mol_per_m3",names_to=pars) %>% 
-    sapply(.,as.numeric) %>% as.data.frame()
-  
+  sweep_long <- read_sweep(filename, format = "long")
   
   par_vals <- lapply(sweep_long[-7],unique)
   
   
-  rm(list=c("colnames_sweep","sweep_mat","sweep_lines"))
+  
   
   
   extend_long <- data.frame()
