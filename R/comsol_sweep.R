@@ -13,6 +13,7 @@
 #' @param byout intervall to interpolate extendend sweep matrix
 #'
 #' @return
+#' @importFrom Hmisc approxExtrap
 #' @export
 #'
 #' @examples
@@ -72,7 +73,7 @@ comsol_sweep <- function(data,
   pb <-  txtProgressBar(min = 0, max = dim(extend_arr)[1], initial = 0,style=3) 
   for(j in 1:dim(extend_arr)[1]){
     for(k in 1:dim(extend_arr)[2]){
-      sweep_arr[j,k,] <- approx(mod_inj_rates,extend_arr[j,k,1:2],inj_rates)$y
+      sweep_arr[j,k,] <- Hmisc::approxExtrap(mod_inj_rates,extend_arr[j,k,1:2],inj_rates)$y
     }
     setTxtProgressBar(pb,j)
   }
