@@ -18,12 +18,13 @@
 #'
 #' @examples
 comsol_sweep <- function(data,
-                         intervall = "3 hours",
+                         intervall = "30 mins",
                          tracer_colname = "CO2_tracer_drift",
                          filename = "freeSoil_anisotropy_sweep_3DS.txt",
                          plot = F,
                          extend  = F,
-                         byout = 1e-7) {
+                         byout = 1e-7
+                         ) {
   
   
   n_DS <- stringr::str_extract(filename,pattern = "\\d+(?=DS)") %>% as.numeric()
@@ -46,6 +47,7 @@ comsol_sweep <- function(data,
     mutate(date = lubridate::round_date(date,intervall),
            tracer_mol = ppm_to_mol(.data[[tracer_colname]],"ppm",T_C = T_soil),
            D0 = D0_T_p(T_soil,unit="m^2/s"),
+           tiefe = abs(tiefe),
            inj_mol_m2_s = round(inj_mol_m2_s,3)) %>% 
     dplyr::filter(inj == 1) %>% 
     group_by(date,tiefe) %>% 
@@ -63,7 +65,7 @@ comsol_sweep <- function(data,
   colnames(DS_mod) <- str_subset(pars,"DS")
   
   tiefen <- dimnames(extend_arr)[[1]] %>% as.numeric()
-  
+  tiefen_df <- data.frame("tiefe"=tiefen)
   inj_rates <- unique(data_agg$inj_mol_m2_s)
   #array with sweep for each inj_rate
   sweep_arr <- array(dim = c(dim(extend_arr)[-3],length(inj_rates)))
@@ -84,6 +86,8 @@ comsol_sweep <- function(data,
   #df for DS
   DS_df <- data.frame(date=mod_dates)
   DS_df[,paste0("DS_",1:n_DS)]<- NA
+  #DS_df[,paste0("DS_min_",1:n_DS)]<- NA
+  #DS_df[,paste0("DS_max_",1:n_DS)]<- NA
   DS_df$RMSE <- NA
   
   columns <- c("date","tiefe","tracer_mol","inj_mol_m2_s","D0")
@@ -96,8 +100,9 @@ comsol_sweep <- function(data,
     CO2_obs <- data_agg[data_agg$date == mod_dates[i],columns]
     inj_i <- unique(CO2_obs$inj_mol_m2_s)
     sweep_sub <- sweep_arr[,,inj_rates==inj_i]
-
+    
     CO2_obs <- CO2_obs[order(abs(CO2_obs$tiefe)),]
+    CO2_obs <- merge(CO2_obs,tiefen_df,all=T)
     rmse <- apply(sweep_sub,2,RMSE,CO2_obs$tracer_mol,normalize = "sd")
     # DS_mat_ch <- str_extract_all(names(rmse),"(?<=DS_\\d=)\\d(\\.\\d+)?(E|e)-\\d+",simplify = T)
     # DS_mat <- as.data.frame(apply(DS_mat_ch,2,as.numeric))
@@ -109,12 +114,19 @@ comsol_sweep <- function(data,
     ########################################
     best.fit.id <- which.min(rmse)
     best_rmse <- min(rmse)
-    #good.fit.id <- which(rmse <= sort(rmse)[n_best])
+    #uncert.id <- which(rmse <= rmse_th)
+    #uncert.id <- which(rmse <= sort(rmse)[n_best])
     
     #Bester Parametersatz
     best_DS <- as.numeric(DS_mod[best.fit.id,])
+    #uncertainty range
+    #DS_range <- apply(DS_mod[uncert.id,],2,function(x) range(as.numeric(x)))
+    #DS_range[is.infinite(DS_range)] <- NA
+    
     #names(best_DS) <- colnames(DS_mat)
     DS_df[i,colnames(DS_mod)] <- best_DS
+    #DS_df[i,paste0("DS_min_",1:n_DS)] <- DS_range[1,]
+    #DS_df[i,paste0("DS_max_",1:n_DS)] <- DS_range[2,]
     
     DS_df[i,"D0"] <- unique(CO2_obs$D0)
     DS_df[i,"RMSE"] <- best_rmse
@@ -124,8 +136,11 @@ comsol_sweep <- function(data,
     setTxtProgressBar(pb,i)
   }
   close(pb)
-  DS_long <- tidyr::pivot_longer(DS_df,matches("DS"),names_to = "tiefe",names_prefix = "DS_",values_to = "DS")
+  DS_long <- tidyr::pivot_longer(DS_df,matches("DS"),names_to = c(".value","tiefe"),names_pattern = "(DS.*)_(\\d)")
+  
   DS_long$DSD0 <- DS_long$DS / DS_long$D0
+  # DS_long$DSD0_min <- DS_long$DS_min / DS_long$D0
+  # DS_long$DSD0_max <- DS_long$DS_max / DS_long$D0
   DS_long$tiefe <- as.numeric(DS_long$tiefe)
   
   if(plot == "DS_time"){
