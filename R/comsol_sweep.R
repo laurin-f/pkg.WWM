@@ -49,7 +49,7 @@ comsol_sweep <- function(data,
            D0 = D0_T_p(T_soil,unit="m^2/s"),
            tiefe = abs(tiefe),
            inj_mol_m2_s = round(inj_mol_m2_s,3)) %>% 
-    dplyr::filter(inj == 1) %>% 
+    dplyr::filter(inj == 1 & !is.na(tracer_mol)) %>% 
     group_by(date,tiefe) %>% 
     summarise(across(everything(),mean))
   
@@ -98,7 +98,7 @@ comsol_sweep <- function(data,
   pb <-  txtProgressBar(min = 0, max = length(mod_dates), initial = 0,style=3) 
   for(i in seq_along(mod_dates)){
     CO2_obs <- data_agg[data_agg$date == mod_dates[i],columns]
-    inj_i <- unique(CO2_obs$inj_mol_m2_s)
+    inj_i <- unique(CO2_obs$inj_mol_m2_s)[1]
     sweep_sub <- sweep_arr[,,inj_rates==inj_i]
     
     CO2_obs <- CO2_obs[order(abs(CO2_obs$tiefe)),]
@@ -128,7 +128,7 @@ comsol_sweep <- function(data,
     #DS_df[i,paste0("DS_min_",1:n_DS)] <- DS_range[1,]
     #DS_df[i,paste0("DS_max_",1:n_DS)] <- DS_range[2,]
     
-    DS_df[i,"D0"] <- unique(CO2_obs$D0)
+    DS_df[i,"D0"] <- mean(CO2_obs$D0,na.rm=T)
     DS_df[i,"RMSE"] <- best_rmse
     
     
@@ -136,12 +136,14 @@ comsol_sweep <- function(data,
     setTxtProgressBar(pb,i)
   }
   close(pb)
+  
   DS_long <- tidyr::pivot_longer(DS_df,matches("DS"),names_to = c(".value","tiefe"),names_pattern = "(DS.*)_(\\d)")
   
   DS_long$DSD0 <- DS_long$DS / DS_long$D0
   # DS_long$DSD0_min <- DS_long$DS_min / DS_long$D0
   # DS_long$DSD0_max <- DS_long$DS_max / DS_long$D0
   DS_long$tiefe <- as.numeric(DS_long$tiefe)
+
   
   if(plot == "DS_time"){
     ggplot(DS_long)+
