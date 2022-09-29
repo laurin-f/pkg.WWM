@@ -1,9 +1,11 @@
 #pfade definieren
 
 #hauptpfad <- "C:/Users/ThinkPad/Documents/FVA/P01677_WindWaldMethan/"
+set_hauptpfad <- function(pfad = "./../../") {
+  setwd(pfad)
+}
 
-
-hauptpfad <- paste0(getwd(),"/../../")
+hauptpfad <- paste0("./../../")
 
 
 #Urdaten
