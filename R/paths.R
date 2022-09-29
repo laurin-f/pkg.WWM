@@ -1,11 +1,24 @@
 #pfade definieren
 
-#hauptpfad <- "C:/Users/ThinkPad/Documents/FVA/P01677_WindWaldMethan/"
-set_hauptpfad <- function(pfad = "./../../") {
-  setwd(pfad)
+
+# set_hauptpfad <- function(pfad = "./../..") {
+#   #print(getwd())
+#   setwd(pfad)
+#   print(getwd())
+#   hauptpfad <<- pfad 
+#   #return(pfad)
+# }
+
+hauptpfad <- "C:/Users/ThinkPad/Documents/FVA/P01677_WindWaldMethan/"
+if(length(testfiles) == 0){
+hauptpfad <- "H:/FVA-Projekte/P01677_WindWaldMethan/"
+}
+testfiles <- list.files(hauptpfad)
+if(length(testfiles) == 0){
+hauptpfad <- paste0(getwd(),"/../../")
 }
 
-hauptpfad <- paste0("./../../")
+
 
 
 #Urdaten
