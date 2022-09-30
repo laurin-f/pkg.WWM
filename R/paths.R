@@ -10,13 +10,14 @@
 # }
 
 hauptpfad <- "C:/Users/ThinkPad/Documents/FVA/P01677_WindWaldMethan/"
+testfiles <- list.files(hauptpfad)
 if(length(testfiles) == 0){
 hauptpfad <- "H:/FVA-Projekte/P01677_WindWaldMethan/"
 }
-testfiles <- list.files(hauptpfad)
-if(length(testfiles) == 0){
-hauptpfad <- paste0(getwd(),"/../../")
-}
+# testfiles <- list.files(hauptpfad)
+# if(length(testfiles) == 0){
+# hauptpfad <- paste0(getwd(),"/../../")
+# }
 
 
 

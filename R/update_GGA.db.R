@@ -94,7 +94,7 @@ update_GGA.db<-function(table.name=c("gga","micro"),path,sqlpath){
   #unzip Funktion anwenden
   unzip.files(path)
   #copy the not zipped files also into the unzipped folder
-  copy_f000x(path)
+  #copy_f000x(path)
   
   #Spaltennamen die uns interessieren
   cols<-c("X.CO2._ppm","X.CH4._ppm","X.H2O._ppm","X.CH4.d_ppm",
