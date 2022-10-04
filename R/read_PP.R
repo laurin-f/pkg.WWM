@@ -47,7 +47,7 @@ read_PP <- function(datelim=NULL, #Zeitrahmen der geladen werden soll
   data<-data[,colnames(data)!="date_int"]
   
   if(corfac){
-    load(file=paste0(datapfad_PP_Kammer,"P_corfac.RData"))
+    load(file=paste0(datapfad_PP_Kammer,"P_corfac_2.RData"))
     
     for(i in 1:5){
       data[,paste0("P_",i)] <- data[,paste0("P_",i)]-P_corfac$P_mean[i]

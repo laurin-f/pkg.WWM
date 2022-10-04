@@ -170,7 +170,7 @@ chamber_arduino <- function(datelim,
       
       data_merge <- Reduce(function(...) merge(..., all=T),data_ls)
       
-      flux_merge <- Reduce(function(...) merge(..., by=c("date","messid"), all=T),flux_ls)
+      flux_merge <- Reduce(function(...) merge(..., by=c("date","messid","T_C"), all=T),flux_ls)
       
       
       if(plot == "facets"){

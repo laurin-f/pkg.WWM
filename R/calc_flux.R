@@ -156,10 +156,11 @@ calc_flux <- function(data,
   flux$date <- lubridate::as_datetime(date_means)
 
   #T_C ist bei mir die Temperatur in der Tracerinjektiobskiste
-  if("T_C" %in% colnames(data)){
-    T_C_means <- sapply(1:nrow(gr_id), function(x) mean(data[which(data$messid == gr_id[x,2]),"T_C"]))
-    flux$T_C <- T_C_means
-  }
+  # if("T_C" %in% colnames(data)){
+  #   T_C_means <- sapply(1:nrow(gr_id), function(x) mean(data[which(data$messid == gr_id[x,2]),"T_C"]))
+  #   flux$T_C <- T_C_means
+  # }
+  flux$T_C <- T_deg
 
   if(group == "messid"){
     #wenn messid nicht die Gruppe ist dan wird es jetzt entfernt
