@@ -101,6 +101,7 @@ chamber_arduino <- function(datelim,
                     T_C = mean(T_C,na.rm=T),
                     chamber=max(chamber))
         
+        data_gga <- data_gga[!duplicated(data_gga$date),]
         data_sub <- merge(data_agg,data_gga,all=T)
         data_sub$chamber <- imputeTS::na_interpolation(data_sub$chamber,method="constant")
       }else{

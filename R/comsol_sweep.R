@@ -21,10 +21,11 @@ comsol_sweep <- function(data,
                          intervall = "30 mins",
                          tracer_colname = "CO2_tracer_drift",
                          filename = "freeSoil_anisotropy_sweep_3DS.txt",
+                         DS_ratio = NULL,
                          plot = F,
                          extend  = F,
                          byout = 1e-7
-                         ) {
+) {
   
   
   n_DS <- stringr::str_extract(filename,pattern = "\\d+(?=DS)") %>% as.numeric()
@@ -32,15 +33,17 @@ comsol_sweep <- function(data,
   pars <- c(paste0("DS_",1:n_DS),"injection_rate")
   
   if(extend){
-  #######################
-  #extend matrix
-  if(!file.exists(paste0(comsolpfad,stringr::str_remove(filename,".txt"),"_extend_arr.RData"))){
-    extend_sweep_mat(filename,byout = byout)
-  }
-  load(paste0(comsolpfad,stringr::str_remove(filename,".txt"),"_extend_arr.RData"))
+    #######################
+    #extend matrix
+    if(!file.exists(paste0(comsolpfad,stringr::str_remove(filename,".txt"),"_extend_arr.RData"))){
+      extend_sweep_mat(filename,byout = byout)
+    }
+    load(paste0(comsolpfad,stringr::str_remove(filename,".txt"),"_extend_arr.RData"))
   }else{
     extend_arr <- read_sweep(filename,format = "array")
   }
+  
+  
   ########################
   #format data
   data_agg <- data %>% 
@@ -60,9 +63,11 @@ comsol_sweep <- function(data,
   #interpolate  extend_arr for inj_rates
   mod_inj_rates <- dimnames(extend_arr)[[3]] %>% as.numeric()
   sweep_colnames <- dimnames(extend_arr)[[2]]
-  DS_mod_ch <- str_extract_all(sweep_colnames,"(?<=DS_\\d=)\\d(\\.\\d+)?(E|e)-\\d+",simplify = T)
+  DS_mod_ch <- stringr::str_extract_all(sweep_colnames,"(?<=DS_\\d=)\\d(\\.\\d+)?(E|e)-\\d+",simplify = T)
   DS_mod <- as.data.frame(apply(DS_mod_ch,2,as.numeric))
-  colnames(DS_mod) <- str_subset(pars,"DS")
+  colnames(DS_mod) <- stringr::str_subset(pars,"DS")
+  
+  
   
   tiefen <- dimnames(extend_arr)[[1]] %>% as.numeric()
   tiefen_df <- data.frame("tiefe"=tiefen)
@@ -99,7 +104,19 @@ comsol_sweep <- function(data,
   for(i in seq_along(mod_dates)){
     CO2_obs <- data_agg[data_agg$date == mod_dates[i],columns]
     inj_i <- unique(CO2_obs$inj_mol_m2_s)[1]
-    sweep_sub <- sweep_arr[,,inj_rates==inj_i]
+    
+    if(!is.null(DS_ratio)){
+      ratio_id <- abs(DS_mod$DS_2/DS_mod$DS_1 - DS_ratio[i,1]) < 0.1
+      if(n_DS > 2){
+        ratio_id2 <- abs(DS_mod$DS_3/DS_mod$DS_1 - DS_ratio[i,2]) < 0.1
+        ratio_id <- ratio_id & ratio_id2
+      }
+      DS_mod_i <- DS_mod[ratio_id,]
+      sweep_sub <- sweep_arr[,ratio_id,inj_rates==inj_i]
+    }else{
+      DS_mod_i <- DS_mod
+      sweep_sub <- sweep_arr[,,inj_rates==inj_i]
+    }
     
     CO2_obs <- CO2_obs[order(abs(CO2_obs$tiefe)),]
     CO2_obs <- merge(CO2_obs,tiefen_df,all=T)
@@ -118,7 +135,7 @@ comsol_sweep <- function(data,
     #uncert.id <- which(rmse <= sort(rmse)[n_best])
     
     #Bester Parametersatz
-    best_DS <- as.numeric(DS_mod[best.fit.id,])
+    best_DS <- as.numeric(DS_mod_i[best.fit.id,])
     #uncertainty range
     #DS_range <- apply(DS_mod[uncert.id,],2,function(x) range(as.numeric(x)))
     #DS_range[is.infinite(DS_range)] <- NA
@@ -143,16 +160,16 @@ comsol_sweep <- function(data,
   # DS_long$DSD0_min <- DS_long$DS_min / DS_long$D0
   # DS_long$DSD0_max <- DS_long$DS_max / DS_long$D0
   DS_long$tiefe <- as.numeric(DS_long$tiefe)
-
+  
   
   if(plot == "DS_time"){
     ggplot(DS_long)+
       geom_line(aes(date,DS,col=as.factor(tiefe)))
   }
   if(plot == "DS_RMSE"){
-  ggplot(DS_long)+
-    geom_point(aes(date,DS,col=RMSE,group=tiefe))+
-    scale_color_viridis_c(limits = c(min(DS_long$RMSE),quantile(DS_long$RMSE,0.9)))
+    ggplot(DS_long)+
+      geom_point(aes(date,DS,col=RMSE,group=tiefe))+
+      scale_color_viridis_c(limits = c(min(DS_long$RMSE),quantile(DS_long$RMSE,0.9)))
   }
   return(DS_long)
 }

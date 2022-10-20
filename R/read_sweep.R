@@ -40,7 +40,7 @@ read_sweep <- function(filename = "freeSoil_anisotropy_sweep_3DS.txt",
     
     mod_inj_rates <- unique(sweep_wide$injection_rate)
     sweep_colnames <- colnames(sweep_wide[-(1:2)])
-    tiefen <- 150-unique(sweep_wide$z)
+    tiefen <- max(sweep_wide$z)-unique(sweep_wide$z)
     
     sweep_arr <- array(dim = c(nrow(sweep_wide)/2,ncol(sweep_wide)-2,2))
     for(i in 1:2){
