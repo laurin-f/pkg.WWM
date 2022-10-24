@@ -18,7 +18,7 @@ chamber_arduino <- function(datelim,
                             t_min = 5,
                             t_init = 1,
                             t_max = 10,
-                            t_offset = 0,
+                            t_offset = "from_df",
                             gga = "gga",
                             plot = "facets",
                             return_ls = T) {
@@ -89,7 +89,14 @@ chamber_arduino <- function(datelim,
     data_gga <- read_GGA(datelim =datelim,table.name = gga)
     if(nrow(data_gga) > 0){
       data_gga <- data_gga[,1:4]
-      data_gga$date <- round_date(data_gga$date,"5 secs") - t_offset
+      if(length(t_offset) == 2){
+        t_offset <- round(seq(t_offset[1],t_offset[2],len = nrow(data_gga)))
+      }
+      if(t_offset == "from_df"){
+        load(file = paste0(datapfad_PP_Kammer,"t_offset_df.RData"))
+        t_offset <- round(approx(t_offset_df$date,t_offset_df$offset,xout = data_gga$date,rule=2)$y)
+      }
+      data_gga$date <- round_date(data_gga$date - t_offset,"5 secs") 
       names(data_gga) <- c("date","CO2_GGA","CH4","H2O")
       #names(data_gga) <- c("date",paste0(names(data_gga[-1]),"_GGA"))
       
@@ -200,8 +207,8 @@ chamber_arduino <- function(datelim,
         p <- ggplot(data_merge)
         if(length(gas) > 1){
           p <- p+
-            geom_line(data = subset(data_merge,!is.na(get(gas[2]))),aes(date,get(gas[2]),col=gas[2]))+
-            ggnewscale::new_scale_color()
+            geom_line(data = subset(data_merge,!is.na(get(gas[2]))),aes(date,get(gas[2]),col=factor(messid),group=1))#+
+            #ggnewscale::new_scale_color()
         }
         p <- p+
           geom_line(aes(date,get(gas[1]),col=as.factor(messid),group=1))+

@@ -82,7 +82,7 @@ calc_flux <- function(data,
   #Funktion auf Liste anwenden
   R2_str <- sapply(fm_list,R2_fm)
   #Werte unter 95% identifizieren
-  bad_meas <- which(R2_str < 0.95)
+  bad_meas <- which(R2_str < 0.8)
   #dazugehörige messid
   bad_messid <- sapply(fm_list[bad_meas],function(x) unique(x$data$messid))
   #Warnung
