@@ -6,12 +6,14 @@
 #' @export
 #' @import stringr
 #' @import lubridate
+#' @import dplyr
+#' @import data.table
 #' @import RSQLite
 #' @import gsignal
 #' @import RcppRoll
 #'
 #' @examples
-update_PP.db<-function(table.name="PP_chamber"){
+update_PP.db<-function(table.name="PP_1min"){
   
   file_pattern <- "\\d+.+TXT"
   path <- PP_datapfad
@@ -90,25 +92,56 @@ update_PP.db<-function(table.name="PP_chamber"){
         bpfilter <- gsignal::butter(n=3,w=wpass,type="pass")
         for(i in 1:6){
           data[ID,paste0("P_filter_",i)] <- gsignal::filtfilt(bpfilter,data[ID,paste0("P_",i)])
-          abs_diff_i <- abs(c(NA,diff(data[ID,paste0("P_filter_",i)])))
-          data[ID,paste0("PPC_",i)] <- fs*RcppRoll::roll_mean(abs_diff_i,30*60*fs,fill=NA)
+          data[ID,paste0("P_diff_",i)] <- abs(c(NA,diff(data[ID,paste0("P_filter_",i)])))
+          data[ID,paste0("PPC_",i)] <- fs*RcppRoll::roll_mean(data[ID,paste0("P_diff_",i)],30*60*fs,fill=NA)
         }
       }
+      colnames <- c("date_int",
+                    paste0(rep(c("P_","P_filter_","P_diff_","PPC_"),each=6),rep(1:6,4))
+      )
+      
+      if(table.name == "PP_1min"){
+          
+        data$date <- lubridate::round_date(date,"mins")
+        data$P_horiz_1 <- abs(data$P_1 - data$P_2)
+        data$P_horiz_2 <- abs(data$P_2 - data$P_3)
+        data$P_horiz_3 <- abs(data$P_3 - data$P_4)
+        
+        colnames <- c("date_int",
+                      paste0(rep(c("P_","P_filter_","P_diff_","PPC_"),each=6),rep(1:6,4)),
+                      paste0(rep("P_horiz_",3),1:3)
+                      )
+        DT <- setDT(data)
+        data_agg <- DT[,lapply(.SD,mean,na.rm=T),by=date,.SDcols = colnames]
+
+        
+        # data_agg <- data %>% 
+        #   group_by(date) %>% 
+        #   summarise(across(everything(),mean,na.rm=T)) %>% 
+        #   select(-date) %>% 
+        #   as.data.frame()
+        data <- as.data.frame(data_agg)
+        data$date_int <- date_ms_as_int(data$date)
+        data <- data[order(data$date_int),colnames]
+        data$date_int <- as.integer(data$date_int)
+      }
+      
       #db verbinden
-      con<-RSQLite::dbConnect(RSQLite::SQLite(),paste0(sqlpfad,"PP.db"))
+      con <- RSQLite::dbConnect(RSQLite::SQLite(),paste0(sqlpfad,"PP.db"))
       #falls tabelle in db nicht vorhanden wird sie hier erstellt
       createquery<-paste0("CREATE TABLE IF NOT EXISTS ",table.name," (date_int INTEGER PRIMARY KEY",
-                          paste(",",paste0(rep(c("P_","P_filter_","PPC_"),each=6),rep(1:6,3)),"REAL",collapse = ""),")")
+                          paste(",",colnames[-1],"REAL",collapse = ""),")")
       DBI::dbExecute(con, createquery)
       
       print(paste("appending",length(files.new),"files to Database"))
       
-      
       #Database aktualisieren
       DBI::dbWriteTable(con,name=table.name,value=data,append=T)
-      
+       # test <- DBI::dbReadTable(con,table.name)
+       # DBI::dbRemoveTable(con,table.name)
       #disconnect Database
       DBI::dbDisconnect(con)
+      
     }
     #files Datei speichern
     write.csv(c(files),

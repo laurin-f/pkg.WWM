@@ -8,14 +8,15 @@
 #' @export
 #' @import lubridate
 #' @import readxl
+#' @import data.table
 #' @import ggplot2
 #' @import imputeTS
-#' @examples
+#' @examples chamber_arduino(datelim = ymd_h("22.09.27 10","22.09.30 10"))
 chamber_arduino <- function(datelim,
                             data = NULL,
                             gga_data = T,
                             gas =  c("CO2","CO2_GGA","CH4"),
-                            t_min = 5,
+                            t_min = 4,
                             t_init = 1,
                             t_max = 10,
                             t_offset = "from_df",
@@ -42,6 +43,7 @@ chamber_arduino <- function(datelim,
   ##########################################
   #daten laden
   if(is.null(data)){
+    
     files <- list.files(chamber_arduino_pfad,pattern = "_chamber",full.names = F)
     
 
@@ -52,6 +54,7 @@ chamber_arduino <- function(datelim,
     
     if(length(files)>0){
       #read files
+      print(paste("reading",length(files),"files"))
       data_ls <- lapply(paste0(chamber_arduino_pfad,files),read.table,sep=";",header=T,stringsAsFactors = F,fill=T)
       names_char <- c("date","CO2_ppm","temp_C","chamber")
       data_ls <- lapply(data_ls,"[",names_char)
@@ -86,6 +89,7 @@ chamber_arduino <- function(datelim,
   #########
   #read GGA
   if(gga_data == T){
+    print(paste("reading GGA data"))
     data_gga <- read_GGA(datelim =datelim,table.name = gga)
     if(nrow(data_gga) > 0){
       data_gga <- data_gga[,1:4]
@@ -101,12 +105,25 @@ chamber_arduino <- function(datelim,
       #names(data_gga) <- c("date",paste0(names(data_gga[-1]),"_GGA"))
       
       if(exists("data_sub")){
-        data_agg <- data_sub %>% 
-          mutate(date = ceiling_date(date, "5 secs")) %>% 
-          group_by(date) %>% 
-          summarise(CO2 = mean(CO2,na.rm=T),
-                    T_C = mean(T_C,na.rm=T),
-                    chamber=max(chamber))
+        #print("aggregating Dyn data")
+        
+        #data.table
+        DT <- data_sub
+        data.table::setDT(DT)
+        DT[,date := ceiling_date(date, "5 secs")]
+        DT <- DT[,.(CO2 = mean(CO2,na.rm=T),
+                          T_C = mean(T_C,na.rm=T),
+                          chamber=max(chamber)),
+                       by = date]
+        data_agg <- as.data.frame(DT)
+
+        ##dplyr        
+        # data_agg <- data_sub %>%
+        #   mutate(date = ceiling_date(date, "5 secs")) %>%
+        #   group_by(date) %>%
+        #   summarise(CO2 = mean(CO2,na.rm=T),
+        #             T_C = mean(T_C,na.rm=T),
+        #             chamber=max(chamber))
         
         data_gga <- data_gga[!duplicated(data_gga$date),]
         data_sub <- merge(data_agg,data_gga,all=T)
@@ -126,7 +143,7 @@ chamber_arduino <- function(datelim,
     }
     ################
     #kammermessungen trennen
-    
+    #print("closingIDs")
     closingID <- which(diff(data_sub$chamber) == 1)+1
     openingID <- which(diff(data_sub$chamber) == -1)
     
@@ -160,7 +177,7 @@ chamber_arduino <- function(datelim,
       data_sub$zeit[data_sub$zeit > t_max | data_sub$zeit < 0] <- NA
       data_sub$messid[is.na(data_sub$zeit)] <- NA
       
-      
+      #print("calc_flux function")
       flux <- lapply(gas,function(x) 
         calc_flux(data = data_sub[!is.na(data_sub[,x]),],
                   group="messid",
@@ -182,7 +199,7 @@ chamber_arduino <- function(datelim,
       
       
       if(plot == "facets"){
-        
+        print("ploting facets")
         p <- ggplot(subset(data_merge,!is.na(messid)))+
           geom_smooth(aes(zeit,get(paste0(gas[1],"_tara"))),method="lm",se=F,col=1,linetype=2,lwd=0.7)+
           geom_line(aes(zeit,get(paste0(gas[1],"_tara")),col=gas[1],group=messid))+
@@ -204,6 +221,7 @@ chamber_arduino <- function(datelim,
         print(p)
       }
       if(plot == "timeline"){
+        print("ploting timeline")
         p <- ggplot(data_merge)
         if(length(gas) > 1){
           p <- p+
@@ -217,6 +235,7 @@ chamber_arduino <- function(datelim,
         print(p)
       }
       if(plot == "flux"){
+        print("ploting flux")
         p <- ggplot(flux_merge)+
           geom_line(aes(date,get(paste0(gas[1],"_mumol_per_s_m2")),col=gas[1]))+
           labs(x="",y=expression(italic(F)~"("*mu * mol ~ m^{-2} ~ s^{-1}*")"),col="")

@@ -18,3 +18,7 @@ check.packages<-function(pkgs){
   }
   sapply(pkgs, require,character.only=T)
 }
+
+
+# packages<-c("stringr","lubridate","dplyr","pkg.WWM","data.table","ggplot2","fastglm")
+# check.packages(packages)

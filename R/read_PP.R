@@ -14,7 +14,7 @@ read_PP <- function(datelim=NULL, #Zeitrahmen der geladen werden soll
                     table.name="PP_chamber",
                     format="long",
                     corfac = T) {
-  update_PP.db()
+  update_PP.db(table.name = table.name)
   
   #db verbinden
   con<-odbc::dbConnect(RSQLite::SQLite(),paste0(sqlpfad,"PP.db"))

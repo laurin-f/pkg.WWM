@@ -13,6 +13,7 @@
 #'
 #' @return data.frame with flux in different units for each group
 #' @import dplyr
+#' @import data.table
 #' @export
 #'
 #' @examples calc_flux(split,Vol=Vol_ml,tracer_conc = 100)
@@ -30,6 +31,7 @@ calc_flux <- function(data,
   ################
   #CO2_tara als CO2-anstieg von Nullpunkt
   #eine liste mit den gas.tara werten
+  #print("gas.tara_list")
   gas.tara_list <- lapply(na.omit(unique(data$messid)), function(x){
     #indizes der reihen mit messid == x
     messid.x <- data$messid == x
@@ -38,7 +40,7 @@ calc_flux <- function(data,
     #jeden gas wert der messid minus den gas wert zu zeit == min.zeit
     data[,gas][which(messid.x)] - data[,gas][which(messid.x & data$zeit == min.zeit)]
   })
-
+  
   #Spalte gas_tara anhängen
   data[,paste0(gas, "_tara")] <- NA
   #und befülen mit den tara werten
@@ -67,8 +69,10 @@ calc_flux <- function(data,
 
   #Formel für glm
   formula <- paste0(gas,"_tara ~ zeit")
+  print("fm_list")
   #für jeden werte von group wird eine regression zwische gas und zeit durchgeführt
   fm_list <- lapply(1:nrow(gr_id), function(x) glm(formula,data = subset(data,messid == gr_id[x,2])))
+  #print("finished fm list")
   #aus der fm_liste wird jeweils der zweite coeffizient (steigung) ausgeschnitten
   ppm_per_min <- sapply(fm_list,"[[","coefficients")[2,]#ppm/min
   
@@ -92,13 +96,22 @@ calc_flux <- function(data,
   }
 
   if(is.character(T_deg)){
-    T_df <- data %>% 
-      dplyr::group_by(messid) %>% 
-      dplyr::filter(!is.na(messid)) %>% 
-      dplyr::summarise_at(T_deg,list(~mean(.,na.rm=T))) %>% 
-      as.data.frame()
     
+    #data.table
+    T_DT <- copy(data)
+    data.table::setDT(T_DT)
+    T_DT <- T_DT[!is.na(messid),lapply(.SD,mean,na.rm=T),by = messid,.SDcol = T_deg]
+    T_df <- as.data.frame(T_DT)
+    rm(T_DT)
+    #dplyr
+    # T_df <- data %>%
+    #   dplyr::filter(!is.na(messid)) %>%
+    #   dplyr::group_by(messid) %>%
+    #   dplyr::summarise_at(T_deg,list(~mean(.,na.rm=T))) %>%
+    #   as.data.frame()
+
     T_deg <- T_df[,T_deg]
+    rm(T_df)
   }
   #######################################
   #Konstanten um Einheiten umzurechnen
@@ -188,6 +201,7 @@ calc_flux <- function(data,
   #der Name des Gases wird am Anfang jeder Spalte mit einer Einheit vorangestellt
   colnames(flux) <- stringr::str_replace(colnames(flux),"^(?=(ppm|ml|g|mol|mumol|R2))",paste0(gas,"_"))
   #liste als output
+  #print("finished calc_flux")
   return(list(flux=flux,data=data))
 }
 
