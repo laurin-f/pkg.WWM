@@ -17,7 +17,11 @@ read_sampler <- function(table.name="sampler1u2",format="long", ...){
 
   data_wide<-read_db(db.name="dynament.db",
                      table.name=table.name, ...)
-  if(nrow(data_wide) == 0){
+  if(is.null(nrow(data_wide))){
+    warning("no data in datelim")
+    return(data_wide)
+    
+  }else if(nrow(data_wide) == 0){
     warning("no data in datelim")
     return(data_wide)
 

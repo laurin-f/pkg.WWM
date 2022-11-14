@@ -135,6 +135,29 @@ update_PP.db<-function(table.name="PP_1min"){
       
       print(paste("appending",length(files.new),"files to Database"))
       
+      
+      #Primary Key dopplungen checken
+      db_duplicates <- DBI::dbGetQuery(con,paste("SELECT * FROM",table.name,"WHERE date_int >=",min(data$date_int),"AND date_int <=",max(data$date_int)))
+      
+      #falls im zeitraum der neuen messungen bereits werte in der db sind
+      if(nrow(db_duplicates) > 0){
+        print("date duplicates")
+        #die neuen werte aufteilen in den gedoppelten zeitraum und den der nicht in der db auftaucht
+        data_duplicate <- data[data$date_int %in% db_duplicates$date_int,]
+        data <- data[!data$date_int %in% db_duplicates$date_int,]
+        
+        #dopplungen in db mit neuen werten joinen und NAs überschreiben
+        db_duplicates_join <- rquery::natural_join(db_duplicates,data_duplicate,by="date_int", jointype = "FULL")
+        
+        #die werte in string für die Query schreiben
+        values_NA <- paste(apply(db_duplicates_join,1,paste,collapse = ", "),collapse="), (")
+        values_NULL <- stringr::str_replace_all(values_NA, c("NA|NaN"="NULL"))
+        replace_query <- paste0("REPLACE INTO ",table.name," (",paste(colnames(db_duplicates_join),collapse = ", "),") VALUES (",values_NULL,");")
+        #cases in db ersetzten
+        rs <- DBI::dbSendQuery(con,replace_query)
+        DBI::dbClearResult(rs)
+      }
+      
       #Database aktualisieren
       DBI::dbWriteTable(con,name=table.name,value=data,append=T)
        # test <- DBI::dbReadTable(con,table.name)

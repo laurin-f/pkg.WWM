@@ -142,6 +142,8 @@ comsol_sweep <- function(data,
     
     #names(best_DS) <- colnames(DS_mat)
     DS_df[i,colnames(DS_mod)] <- best_DS
+    DS_df[i,paste0("CO2_mod_",0:7)] <- sweep_sub[,best.fit.id]
+    DS_df[i,paste0("CO2_obs_",0:7)] <- CO2_obs$tracer_mol[]
     #DS_df[i,paste0("DS_min_",1:n_DS)] <- DS_range[1,]
     #DS_df[i,paste0("DS_max_",1:n_DS)] <- DS_range[2,]
     
@@ -162,14 +164,25 @@ comsol_sweep <- function(data,
   DS_long$tiefe <- as.numeric(DS_long$tiefe)
   
   
-  if(plot == "DS_time"){
-    ggplot(DS_long)+
+  if(plot == "DS"){
+    p <- ggplot(DS_long)+
       geom_line(aes(date,DS,col=as.factor(tiefe)))
+    print(p)
   }
   if(plot == "DS_RMSE"){
-    ggplot(DS_long)+
+    p <- ggplot(DS_long)+
       geom_point(aes(date,DS,col=RMSE,group=tiefe))+
       scale_color_viridis_c(limits = c(min(DS_long$RMSE),quantile(DS_long$RMSE,0.9)))
+    print(p)
+  }
+  if(plot == "CO2"){
+
+    DS_CO2_long <- tidyr::pivot_longer(DS_df,matches("CO2"),names_to = c(".value","tiefe"),names_pattern = "(CO2.*)_(\\d)")
+    
+    p <- ggplot(subset(DS_CO2_long,!is.na(CO2_obs)))+
+      geom_line(aes(date,CO2_obs,col=factor(tiefe),linetype ="obs"))+
+      geom_line(aes(date,CO2_mod,col=factor(tiefe),linetype ="mod"))
+    print(p)
   }
   return(DS_long)
 }

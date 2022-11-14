@@ -30,7 +30,7 @@ read_GGA <- function(db.name="GGA.db", #name der db
                     ggapath = ggapfad){
   #dbs updaten
   update_fun<-get(paste0("update_",db.name))
-  update_fun(table.name,ggapath,sqlpath)
+  update_fun(table.name,path=ggapath,sqlpath)
 
   #db verbinden
   con<-odbc::dbConnect(RSQLite::SQLite(),paste0(sqlpath,db.name))

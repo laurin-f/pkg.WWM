@@ -141,16 +141,17 @@ update_GGA.db<-function(table.name=c("gga","micro"),path,sqlpath){
       #datum formatieren
       data.new$date<-parse_date_time(data.new$Time,"mdYHMS")
       
-      #datum NAs entfernen
-      data.new<-data.new[!is.na(data.new$date),]
       
       #gewünschte spalten auswählen
       data<-data.new[c("date",cols)]
       
       #date in date_int umbenennen
       colnames(data)<-c("date_int",colnames)
+      
       #data_int als integer
       data$date_int<-as.integer(data$date_int)
+      #datum NAs entfernen
+      data<-data[!is.na(data$date_int),]
       
       #duplikate entfernen
       data<-data[!duplicated(data$date_int),]

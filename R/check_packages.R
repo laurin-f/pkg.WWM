@@ -20,5 +20,5 @@ check.packages<-function(pkgs){
 }
 
 
-# packages<-c("stringr","lubridate","dplyr","pkg.WWM","data.table","ggplot2","fastglm")
+# packages<-c("stringr","lubridate","dplyr","pkg.WWM","data.table","ggplot2")
 # check.packages(packages)
