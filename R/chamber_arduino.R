@@ -46,7 +46,7 @@ chamber_arduino <- function(datelim,
     
     files <- list.files(chamber_arduino_pfad,pattern = "_chamber",full.names = F)
     
-
+    
     ##subset of files with date in datelim
     file_date <- lubridate::ymd(stringr::str_extract(files,"^\\d{6}"))
     dates <- lubridate::date(datelim)
@@ -112,11 +112,11 @@ chamber_arduino <- function(datelim,
         data.table::setDT(DT)
         DT[,date := ceiling_date(date, "5 secs")]
         DT <- DT[,.(CO2 = mean(CO2,na.rm=T),
-                          T_C = mean(T_C,na.rm=T),
-                          chamber=max(chamber)),
-                       by = date]
+                    T_C = mean(T_C,na.rm=T),
+                    chamber=max(chamber)),
+                 by = date]
         data_agg <- as.data.frame(DT)
-
+        
         ##dplyr        
         # data_agg <- data_sub %>%
         #   mutate(date = ceiling_date(date, "5 secs")) %>%
@@ -137,120 +137,127 @@ chamber_arduino <- function(datelim,
   }
   
   if(exists("data_sub")){
+    
     if(!all(gas %in% colnames(data_sub))){
       warning("colums ",paste(gas[!gas %in% names(data_sub)],collapse = " and ")," don't exist and are removed from gas")
-      gas <- gas[gas %in% names(data_sub)]
+      gas_old <- gas
+      gas <- gas_old[gas_old %in% names(data_sub)]
     }
-    ################
-    #kammermessungen trennen
-    #print("closingIDs")
-    closingID <- which(diff(data_sub$chamber) == 1)+1
-    openingID <- which(diff(data_sub$chamber) == -1)
-    
-    if(length(closingID) > 0 & length(openingID) > 0 ){
-      if(closingID[1] > openingID[1]){
-        closingID <- c(1,closingID)
-      }
+    if(length(gas) > 0){
+      ################
+      #kammermessungen trennen
+      #print("closingIDs")
+      closingID <- which(diff(data_sub$chamber) == 1)+1
+      openingID <- which(diff(data_sub$chamber) == -1)
       
-      if(tail(closingID,1) > tail(openingID,1)){
-        openingID <- c(openingID,nrow(data_sub))
-      }
-      
-      closing_date <- data_sub$date[closingID]
-      opening_date <- data_sub$date[openingID]
-      
-      meas_time <- as.numeric(difftime(opening_date,closing_date,"mins"))
-      
-      closingID <- closingID[meas_time > t_min]
-      openingID <- openingID[meas_time > t_min]
-      
-      data_sub$zeit <- NA
-      data_sub$messid <- NA
-      for (i in 1:length(openingID)) {
-        #zeit in minuten nach closing
-        data_sub$zeit[closingID[i]:openingID[i]] <-
-          difftime(data_sub$date[closingID[i]:openingID[i]], data_sub$date[closingID[i]]+t_init*60, unit =
-                     "mins")
-        #messid als durchlaufende Nummer f�r jede closing opening periode
-        data_sub$messid[closingID[i]:openingID[i]] <- i
-      }
-      data_sub$zeit[data_sub$zeit > t_max | data_sub$zeit < 0] <- NA
-      data_sub$messid[is.na(data_sub$zeit)] <- NA
-      
-      #print("calc_flux function")
-      flux <- lapply(gas,function(x) 
-        calc_flux(data = data_sub[!is.na(data_sub[,x]),],
-                  group="messid",
-                  Vol=Vol,
-                  Grundfl = Grundfl,
-                  gas = x,
-                  T_deg = "T_C"))
-      
-      flux_ls <- lapply(flux,"[[",1)
-      flux_ls <- lapply(flux_ls,function(x) {
-        x$date <- lubridate::round_date(x$date,"10 mins")
-        x})
-      
-      data_ls <- lapply(flux,"[[",2)
-      
-      data_merge <- Reduce(function(...) merge(..., all=T),data_ls)
-      
-      flux_merge <- Reduce(function(...) merge(..., by=c("date","messid","T_C"), all=T),flux_ls)
-      
-      
-      if(plot == "facets"){
-        print("ploting facets")
-        p <- ggplot(subset(data_merge,!is.na(messid)))+
-          geom_smooth(aes(zeit,get(paste0(gas[1],"_tara"))),method="lm",se=F,col=1,linetype=2,lwd=0.7)+
-          geom_line(aes(zeit,get(paste0(gas[1],"_tara")),col=gas[1],group=messid))+
-          labs(y=paste0(gas[1],"(ppm) tara"))#+
-        if(length(gas) > 1){
-          p <- p+geom_line(data = subset(data_merge,!is.na(get(paste0(gas[2],"_tara")))),aes(zeit,get(paste0(gas[2],"_tara")),col=gas[2],group=messid))+
-            labs(col="")
-        }else{
-          p <- p+
-            guides(col=F)
+      if(length(closingID) > 0 & length(openingID) > 0 ){
+        if(closingID[1] > openingID[1]){
+          closingID <- c(1,closingID)
         }
-        if(max(data_merge$messid,na.rm=T) > 50){
-          p <- p+
-            facet_wrap(~ceiling(messid / 10))
-        }else{
-          p <- p+
-            facet_wrap(~messid)
+        
+        if(tail(closingID,1) > tail(openingID,1)){
+          openingID <- c(openingID,nrow(data_sub))
         }
-        print(p)
-      }
-      if(plot == "timeline"){
-        print("ploting timeline")
-        p <- ggplot(data_merge)
-        if(length(gas) > 1){
-          p <- p+
-            geom_line(data = subset(data_merge,!is.na(get(gas[2]))),aes(date,get(gas[2]),col=factor(messid),group=1))#+
+        
+        closing_date <- data_sub$date[closingID]
+        opening_date <- data_sub$date[openingID]
+        
+        meas_time <- as.numeric(difftime(opening_date,closing_date,"mins"))
+        
+        closingID <- closingID[meas_time > t_min]
+        openingID <- openingID[meas_time > t_min]
+        
+        data_sub$zeit <- NA
+        data_sub$messid <- NA
+        for (i in 1:length(openingID)) {
+          #zeit in minuten nach closing
+          data_sub$zeit[closingID[i]:openingID[i]] <-
+            difftime(data_sub$date[closingID[i]:openingID[i]], data_sub$date[closingID[i]]+t_init*60, unit =
+                       "mins")
+          #messid als durchlaufende Nummer f�r jede closing opening periode
+          data_sub$messid[closingID[i]:openingID[i]] <- i
+        }
+        data_sub$zeit[data_sub$zeit > t_max | data_sub$zeit < 0] <- NA
+        data_sub$messid[is.na(data_sub$zeit)] <- NA
+        
+        #print("calc_flux function")
+        flux <- lapply(gas,function(x) 
+          calc_flux(data = data_sub[!is.na(data_sub[,x]),],
+                    group="messid",
+                    Vol=Vol,
+                    Grundfl = Grundfl,
+                    gas = x,
+                    T_deg = "T_C"))
+        
+        flux_ls <- lapply(flux,"[[",1)
+        flux_ls <- lapply(flux_ls,function(x) {
+          x$date <- lubridate::round_date(x$date,"10 mins")
+          x})
+        
+        data_ls <- lapply(flux,"[[",2)
+        
+        data_merge <- Reduce(function(...) merge(..., all=T),data_ls)
+        
+        flux_merge <- Reduce(function(...) merge(..., by=c("date","messid","T_C"), all=T),flux_ls)
+        
+        
+        if(plot == "facets"){
+          print("ploting facets")
+          p <- ggplot(subset(data_merge,!is.na(messid)))+
+            geom_smooth(aes(zeit,get(paste0(gas[1],"_tara"))),method="lm",se=F,col=1,linetype=2,lwd=0.7)+
+            geom_line(aes(zeit,get(paste0(gas[1],"_tara")),col=gas[1],group=messid))+
+            labs(y=paste0(gas[1],"(ppm) tara"))#+
+          if(length(gas) > 1){
+            p <- p+geom_line(data = subset(data_merge,!is.na(get(paste0(gas[2],"_tara")))),aes(zeit,get(paste0(gas[2],"_tara")),col=gas[2],group=messid))+
+              labs(col="")
+          }else{
+            p <- p+
+              guides(col=F)
+          }
+          if(max(data_merge$messid,na.rm=T) > 50){
+            p <- p+
+              facet_wrap(~ceiling(messid / 10))
+          }else{
+            p <- p+
+              facet_wrap(~messid)
+          }
+          print(p)
+        }
+        if(plot == "timeline"){
+          print("ploting timeline")
+          p <- ggplot(data_merge)
+          if(length(gas) > 1){
+            p <- p+
+              geom_line(data = subset(data_merge,!is.na(get(gas[2]))),aes(date,get(gas[2]),col=factor(messid),group=1))#+
             #ggnewscale::new_scale_color()
+          }
+          p <- p+
+            geom_line(aes(date,get(gas[1]),col=as.factor(messid),group=1))+
+            labs(x="",y=gas[1])+
+            guides(col=F)
+          print(p)
         }
-        p <- p+
-          geom_line(aes(date,get(gas[1]),col=as.factor(messid),group=1))+
-          labs(x="",y=gas[1])+
-          guides(col=F)
-        print(p)
-      }
-      if(plot == "flux"){
-        print("ploting flux")
-        p <- ggplot(flux_merge)+
-          geom_line(aes(date,get(paste0(gas[1],"_mumol_per_s_m2")),col=gas[1]))+
-          labs(x="",y=expression(italic(F)~"("*mu * mol ~ m^{-2} ~ s^{-1}*")"),col="")
-        if(length(gas) > 1){
-          p <- p+geom_line(aes(date,get(paste0(gas[2],"_mumol_per_s_m2")),col=gas[2]))
+        if(plot == "flux"){
+          print("ploting flux")
+          p <- ggplot(flux_merge)+
+            geom_line(aes(date,get(paste0(gas[1],"_mumol_per_s_m2")),col=gas[1]))+
+            labs(x="",y=expression(italic(F)~"("*mu * mol ~ m^{-2} ~ s^{-1}*")"),col="")
+          if(length(gas) > 1){
+            p <- p+geom_line(aes(date,get(paste0(gas[2],"_mumol_per_s_m2")),col=gas[2]))
+          }
+          print(p)
         }
-        print(p)
+        
+        
+        if(return_ls){
+          return(list(flux_merge,data_merge))
+        }else{
+          return(flux_merge)
+        }
       }
-      
-      
-      if(return_ls){
-        return(list(flux_merge,data_merge))
-      }else{
-        return(flux_merge)
-      }
+    }else{#if length(gas) < 0
+      print(paste("no",paste(gas_old,collapse = " and ")," data in datelim"))
+      return(list(NULL,NULL))
     }
   }#exists data_sub
 }
