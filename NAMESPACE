@@ -2,6 +2,7 @@
 
 export(D0_T_p)
 export(R2)
+export(R2_fm)
 export(RMSE)
 export(V_to_Pa)
 export(adj_grob_size)

@@ -76,12 +76,7 @@ calc_flux <- function(data,
   #aus der fm_liste wird jeweils der zweite coeffizient (steigung) ausgeschnitten
   ppm_per_min <- sapply(fm_list,"[[","coefficients")[2,]#ppm/min
   
-  #der R2 der regression wird bestimmt
-  #Funktion um R2 aus fm zu bestimmen
-  R2_fm <- function(fm){
-    R2 <- 1-fm$deviance/fm$null.deviance
-    return(R2)
-  }
+
   
   #Funktion auf Liste anwenden
   R2_str <- sapply(fm_list,R2_fm)

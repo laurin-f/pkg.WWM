@@ -70,6 +70,7 @@ injection_arduino <- function(datelim,
   probe1 <- read_sampler(datelim=datelim,format="wide")
   if(nrow(probe1) > 0){
     data_sub <- merge(data_sub,probe1[,c("date","T_C")],all = T)
+    data_sub$T_C[data_sub$T_C < -10| data_sub$T_C > 50] <- NA
     
     if(length(which(!is.na(data_sub$T_C))) > 1){
       data_sub$T_C <- imputeTS::na_interpolation(data_sub$T_C)

@@ -20,7 +20,9 @@ comsol_exe <- function(modelname,
                        outfile_raw = "CO2_flux_prod.txt",
                        COMSOL_progammpath = COMSOL_progammpfad,
                        COMSOL_exepath = COMSOL_exepfad,
-                       job = "b1",
+                       job = NULL,
+                       study =NULL,
+                       overwrite_model = F,
                        overwrite = F) {
   
   #new name for outputfile with path
@@ -30,9 +32,15 @@ comsol_exe <- function(modelname,
     print(paste(outfile_new,"already exists set overwrite = T to replace it"))
   }else{
     
-    #string that is parsed to commandline
-    cmd <- paste0("cd ",COMSOL_exepath,"&& comsolbatch.exe -inputfile ",COMSOL_progammpath,modelname,".mph -outputfile ",COMSOL_progammpath,modelname,"_solved.mph -job ",job)
     
+    job_str <- ifelse(is.null(job),"",paste("-job",job))
+    study_str <- ifelse(is.null(study),"",paste("-study",study))
+    #string that is parsed to commandline
+    if(overwrite_model){
+      cmd <- paste0("cd ",COMSOL_exepath,"&& comsolbatch.exe -inputfile ",COMSOL_progammpath,modelname,".mph -outputfile ",COMSOL_progammpath,modelname," ",job_str,study_str)
+    }else{
+    cmd <- paste0("cd ",COMSOL_exepath,"&& comsolbatch.exe -inputfile ",COMSOL_progammpath,modelname,".mph -outputfile ",COMSOL_progammpath,modelname,"_solved.mph ",job_str,study_str)
+    }
     #if input pars exists save them to .txt 
     if(!is.null(input_pars)){
       par_file <- paste0(comsolpfad,"input_pars.txt")
