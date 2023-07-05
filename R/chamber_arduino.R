@@ -180,6 +180,19 @@ chamber_arduino <- function(datelim,
         data_sub$zeit[data_sub$zeit > t_max | data_sub$zeit < 0] <- NA
         data_sub$messid[is.na(data_sub$zeit)] <- NA
         
+        ###########################
+        #klima data für p_kPa
+        load(paste0(klimapfad,"Hartheim CR1000/klima_data_PP_kammer.RData"))
+        klima$p_kPa <- klima$P_hPa / 10
+        data_sub <-merge(data_sub,klima[,c("date","p_kPa")],all.x =T)
+        
+        if(any(!is.na(data_sub$p_kPa))){
+          data_sub$p_kPa <- imputeTS::na_interpolation(data_sub$p_kPa)
+          p_kPa <- "p_kPa"
+        }else{
+          p_kPa <- 101.3
+        }
+        
         #print("calc_flux function")
         flux <- lapply(gas,function(x) 
           calc_flux(data = data_sub[!is.na(data_sub[,x]),],
@@ -187,6 +200,7 @@ chamber_arduino <- function(datelim,
                     Vol=Vol,
                     Grundfl = Grundfl,
                     gas = x,
+                    p_kPa = p_kPa,
                     T_deg = "T_C"))
         
         flux_ls <- lapply(flux,"[[",1)
@@ -198,7 +212,7 @@ chamber_arduino <- function(datelim,
         
         data_merge <- Reduce(function(...) merge(..., all=T),data_ls)
         
-        flux_merge <- Reduce(function(...) merge(..., by=c("date","messid","T_C"), all=T),flux_ls)
+        flux_merge <- Reduce(function(...) merge(..., by=c("date","messid","T_C","p_kPa"), all=T),flux_ls)
         
         
         if(plot == "facets"){

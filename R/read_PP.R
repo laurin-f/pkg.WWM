@@ -46,11 +46,20 @@ read_PP <- function(datelim=NULL, #Zeitrahmen der geladen werden soll
   #date_int weglassen
   data<-data[,colnames(data)!="date_int"]
   
-  if(corfac){
+  if(corfac == T){
     load(file=paste0(datapfad_PP_Kammer,"P_corfac_2.RData"))
     
     for(i in 1:5){
       data[,paste0("P_",i)] <- data[,paste0("P_",i)]-P_corfac$P_mean[i]
+    }
+  }
+  if(corfac == "P_corfac_date"){
+    load(file=paste0(datapfad_PP_Kammer,"P_corfac_date.RData"))
+    
+    for(i in 1:5){
+      corfac_i <- subset(P_corfac,id == i)
+      cal_i <- approx(corfac_i$date,corfac_i$P_mean,xout = data$date,rule=2)$y
+      data[,paste0("P_",i)] <- data[,paste0("P_",i)]-cal_i
     }
   }
   

@@ -26,6 +26,7 @@ hauptpfad <- "H:/FVA-Projekte/P01677_WindWaldMethan/"
 ggapfad<-paste0(hauptpfad,"Daten/Urdaten/GGA/")
 dynpfad<-paste0(hauptpfad,"Daten/Urdaten/Dynament/")
 datapfad_schaui<-paste0(hauptpfad,"Daten/Urdaten/Schauinsland/")
+datapfad_Pico<- paste0(hauptpfad,"Daten/Urdaten/Picolog/")
 klimapfad<- paste0(hauptpfad,"Daten/Urdaten/Klimadaten_Hartheim/")
 soilpfad<-paste0(hauptpfad,"Daten/Urdaten/Boden_Hartheim/")
 arduinopfad<-paste0(hauptpfad,"Daten/Urdaten/Profileprobe3_Arduino/")
